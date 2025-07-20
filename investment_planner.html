@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 스마트 투자계획 시스템 (무한루프 수정)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* 기본 스타일 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        /* 헤더 스타일 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 15px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        /* 투자 요약 정보 */
+        .investment-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .summary-item {
+            text-align: center;
+        }
+        
+        .summary-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .summary-amount {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        /* 탭 네비게이션 */
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.95em;
+            white-space: nowrap;
+        }
+        
+        .nav-tab:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* 탭 콘텐츠 */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 계획 섹션 */
+        .plan-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .section-title .icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        /* 차트 관련 스타일 */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .chart-canvas {
+            position: relative;
+            height: 300px;
+        }
+        
+        /* 알림 박스 */
+        .alert-box {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left-color: #17a2b8;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left-color: #ffc107;
+        }
+        
+        /* 버튼 스타일 */
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            position: relative;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn-sync {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn-sync:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* 로딩 스피너 */
+        .loading-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        .btn.loading .loading-spinner {
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 자동 저장 표시기 */
+        .auto-save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .auto-save-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* 최적화 그리드 */
+        .optimization-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .optimization-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .optimization-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .optimization-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+        
+        .optimization-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .optimization-content {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .optimization-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 자동 저장 표시기 -->
+    <div class="auto-save-indicator" id="autoSaveIndicator">
+        💾 자동 저장됨
+    </div>
+
+    <div class="container">
+        <!-- 헤더 구역 -->
+        <div class="header">
+            <h1>🎯 스마트 투자계획 시스템 (무한루프 수정)</h1>
+            <p>현재 자산 분석 기반 맞춤형 투자전략</p>
+            <div class="investment-summary">
+                <div class="summary-item">
+                    <div class="summary-label">현재 총자산</div>
+                    <div class="summary-amount" id="currentTotalAssets">-</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">월 투자여력</div>
+                    <div class="summary-amount" id="monthlyInvestment">1,750만원</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">2025년 목표</div>
+                    <div class="summary-amount" id="yearlyTarget">2.1억원</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">목표 수익률</div>
+                    <div class="summary-amount" id="targetReturn">7.5%</div>
+                </div>
+            </div>
+            
+            <!-- 동기화 버튼 및 상태 표시 -->
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-sync" onclick="자산데이터동기화()" id="syncAssetBtn">
+                    <span class="loading-spinner"></span>
+                    🔄 자산 데이터 동기화
+                </button>
+                <button class="btn btn-primary" onclick="목표배분동기화()" id="syncTargetBtn" style="margin-left: 10px;">
+                    <span class="loading-spinner"></span>
+                    🎯 목표배분 동기화
+                </button>
+                <div id="syncStatus" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
+            </div>
+        </div>
+        
+        <!-- 탭 네비게이션 -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="탭변경('analysis')">📊 현재 포트폴리오 분석</button>
+            <button class="nav-tab" onclick="탭변경('allocation')">💼 2025년 계좌배분</button>
+            <button class="nav-tab" onclick="탭변경('goals')">🎯 목표별 투자계획</button>
+            <button class="nav-tab" onclick="탭변경('simulation')">🔮 투자 시뮬레이션</button>
+            <button class="nav-tab" onclick="탭변경('action')">⚡ 액션 플랜</button>
+        </div>
+        
+        <!-- 현재 포트폴리오 분석 탭 -->
+        <div id="analysis" class="tab-content active">
+            <!-- 현재 자산 현황 -->
+            <div class="plan-section">
+                <div class="section-title">
+                    <span class="icon">📊</span>
+                    현재 자산 현황 (assets.html 연동)
+                </div>
+                
+                <div class="alert-box alert-info">
+                    <strong>💡 실시간 연동:</strong> 자산 관리 모듈의 데이터를 실시간으로 분석하여 맞춤형 투자 방향을 제시합니다.<br>
+                    <strong>🔄 동기화 기능:</strong> "자산 데이터 동기화" 버튼으로 최신 자산 데이터를, "목표배분 동기화" 버튼으로 목표 설정을 동기화할 수 있습니다.<br>
+                    <strong>🎯 목표배분 동기화:</strong> assets.html에서 설정한 목표 배분이 자동으로 반영됩니다.
+                </div>
+                
+                <div class="charts-row">
+                    <!-- 현재 자산 배분 -->
+                    <div class="chart-container">
+                        <div class="chart-title">현재 자산 배분</div>
+                        <div class="chart-canvas">
+                            <canvas id="currentAssetChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 목표 vs 현재 비교 -->
+                    <div class="chart-container">
+                        <div class="chart-title">목표 vs 현재 자산배분 비교</div>
+                        <div class="chart-canvas">
+                            <canvas id="targetVsCurrentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 동기화 상태 표시 -->
+                <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #007bff; margin-bottom: 15px;">🔄 동기화 상태</h3>
+                    <div id="syncStatusDetail">
+                        <!-- 동기화 상태가 여기에 표시됩니다 -->
+                    </div>
+                </div>
+                
+                <!-- 자산별 상세 내역 -->
+                <div style="background: white; padding: 20px; border-radius: 10px;">
+                    <h3 style="color: #007bff; margin-bottom: 15px;">💰 현재 보유 자산 상세</h3>
+                    <div id="currentAssetsList">
+                        <!-- 현재 자산 목록이 여기에 표시됩니다 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 포트폴리오 분석 결과 -->
+            <div class="plan-section">
+                <div class="section-title">
+                    <span class="icon">🔍</span>
+                    포트폴리오 분석 결과
+                </div>
+                
+                <div id="portfolioAnalysis" class="optimization-grid">
+                    <!-- 분석 결과가 여기에 동적으로 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 나머지 탭들 (간단화) -->
+        <div id="allocation" class="tab-content">
+            <div class="plan-section">
+                <div class="section-title">
+                    <span class="icon">💼</span>
+                    2025년 계좌배분
+                </div>
+                <p>계좌별 자산 배분 계획이 여기에 표시됩니다...</p>
+            </div>
+        </div>
+        
+        <div id="goals" class="tab-content">
+            <div class="plan-section">
+                <div class="section-title">
+                    <span class="icon">🎯</span>
+                    목표별 투자계획
+                </div>
+                <p>투자 목표별 세부 계획이 여기에 표시됩니다...</p>
+            </div>
+        </div>
+        
+        <div id="simulation" class="tab-content">
+            <div class="plan-section">
+                <div class="section-title">
+                    <span class="icon">🔮</span>
+                    투자 시뮬레이션
+                </div>
+                <p>투자 시뮬레이션 결과가 여기에 표시됩니다...</p>
+            </div>
+        </div>
+        
+        <div id="action" class="tab-content">
+            <div class="plan-section">
+                <div class="section-title">
+                    <span class="icon">⚡</span>
+                    액션 플랜
+                </div>
+                <p>실행 가능한 투자 액션 플랜이 여기에 표시됩니다...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+        ===========================================
+        ★ 무한루프 방지 시스템 (핵심 수정)
+        ===========================================
+        */
+        
+        // ★ 중복 실행 방지 플래그들
+        let 자산동기화중 = false;
+        let 목표배분동기화중 = false;
+        let 차트업데이트중 = false;
+        let 자동저장중 = false;
+        let 저장소감지중단 = false;
+        
+        // ★ 디바운스 타이머들
+        let 자산동기화타이머 = null;
+        let 목표배분동기화타이머 = null;
+        let 차트업데이트타이머 = null;
+        let 자동저장타이머 = null;
+        
+        // ★ 마지막 저장 시간 기록 (중복 저장 방지)
+        let 마지막자산저장시간 = 0;
+        let 마지막목표배분저장시간 = 0;
+        
+        /*
+        ===========================================
+        전역 변수 및 데이터 구조
+        ===========================================
+        */
+        
+        const STORAGE_KEYS = {
+            자산데이터: 'shared_asset_data',
+            목표배분: 'shared_target_allocation',
+            투자계획: 'module3_investment_plan',
+            투자목표: 'module3_investment_goals',
+            투자설정: 'module3_settings'
+        };
+        
+        let 현재자산데이터 = null;
+        
+        let 투자설정 = {
+            월투자여력: 1750,
+            연투자여력: 21000,
+            목표수익률: 7.5,
+            투자기간: 10,
+            위험성향: '균형형'
+        };
+        
+        let 목표배분 = {
+            '국내주식': 25.0,
+            '해외주식': 30.0,
+            '채권': 20.0,
+            '부동산': 15.0,
+            '현금': 5.0,
+            '대안투자': 5.0 
+        };
+        
+        let 투자목표목록 = [];
+        let 현재자산차트 = null;
+        let 목표대비차트 = null;
+        
+        const 차트색상 = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#E7E9ED'
+        ];
+        
+        /*
+        ===========================================
+        ★ 완전히 수정된 동기화 함수들 (무한루프 방지)
+        ===========================================
+        */
+        
+        // ★ 버튼 상태 관리 함수
+        function 버튼로딩상태(버튼Id, 로딩상태) {
+            const 버튼 = document.getElementById(버튼Id);
+            if (버튼) {
+                if (로딩상태) {
+                    버튼.classList.add('loading');
+                    버튼.disabled = true;
+                } else {
+                    버튼.classList.remove('loading');
+                    버튼.disabled = false;
+                }
+            }
+        }
+        
+        // ★ 디바운스 함수 (연속 호출 방지)
+        function 디바운스(함수, 지연시간) {
+            let 타이머;
+            return function(...args) {
+                clearTimeout(타이머);
+                타이머 = setTimeout(() => 함수.apply(this, args), 지연시간);
+            };
+        }
+        
+        // ★ 완전히 수정된 목표배분 동기화 함수
+        function 목표배분동기화() {
+            // 중복 실행 방지
+            if (목표배분동기화중) {
+                console.log('⚠️ 목표배분 동기화가 이미 진행 중입니다.');
+                return false;
+            }
+            
+            // 디바운스 타이머 설정
+            if (목표배분동기화타이머) {
+                clearTimeout(목표배분동기화타이머);
+            }
+            
+            목표배분동기화타이머 = setTimeout(() => {
+                실제목표배분동기화();
+            }, 300); // 300ms 지연
+        }
+        
+        function 실제목표배분동기화() {
+            try {
+                목표배분동기화중 = true;
+                버튼로딩상태('syncTargetBtn', true);
+                
+                const 상태표시 = document.getElementById('syncStatus');
+                상태표시.textContent = '🔄 목표배분 동기화 중...';
+                상태표시.style.color = '#007bff';
+                
+                console.log('🎯 목표배분 동기화 시작');
+                
+                const assets모듈목표배분 = localStorage.getItem(STORAGE_KEYS.목표배분);
+                
+                if (!assets모듈목표배분) {
+                    throw new Error('목표배분 데이터가 없습니다.');
+                }
+                
+                const 파싱된목표배분 = JSON.parse(assets모듈목표배분);
+                console.log('📊 파싱된 목표배분 데이터:', 파싱된목표배분);
+                
+                // ★ 데이터 형식 처리 (여러 형식 대응)
+                let 새목표배분 = null;
+                
+                if (파싱된목표배분.목표배분 && typeof 파싱된목표배분.목표배분 === 'object') {
+                    새목표배분 = 파싱된목표배분.목표배분;
+                } else if (typeof 파싱된목표배분 === 'object' && 파싱된목표배분.국내주식 !== undefined) {
+                    새목표배분 = 파싱된목표배분;
+                } else if (파싱된목표배분.data && typeof 파싱된목표배분.data === 'object') {
+                    새목표배분 = 파싱된목표배분.data;
+                }
+                
+                if (!새목표배분) {
+                    throw new Error('목표배분 데이터 형식을 인식할 수 없습니다.');
+                }
+                
+                // ★ 필수 필드 검증
+                const 필수필드 = ['국내주식', '해외주식', '채권', '부동산', '현금'];
+                const 누락필드 = 필수필드.filter(필드 => 새목표배분[필드] === undefined);
+                
+                if (누락필드.length > 0) {
+                    throw new Error(`필수 필드 누락: ${누락필드.join(', ')}`);
+                }
+                
+                // ★ 숫자 데이터 검증 및 변환
+                const 검증된목표배분 = {};
+                for (const [키, 값] of Object.entries(새목표배분)) {
+                    const 숫자값 = parseFloat(값);
+                    if (isNaN(숫자값) || 숫자값 < 0 || 숫자값 > 100) {
+                        throw new Error(`잘못된 비율 값: ${키} = ${값}`);
+                    }
+                    검증된목표배분[키] = 숫자값;
+                }
+                
+                // ★ 목표배분 적용 (저장소 감지 중단)
+                저장소감지중단 = true;
+                목표배분 = { ...검증된목표배분 };
+                
+                상태표시.textContent = '✅ 목표배분 동기화 완료!';
+                상태표시.style.color = '#28a745';
+                
+                console.log('✅ 목표배분 동기화 성공:', 목표배분);
+                
+                // ★ 안전한 UI 업데이트 (디바운스 적용)
+                디바운스된차트업데이트();
+                디바운스된동기화상태표시();
+                
+                // ★ 안전한 자동 저장 (플래그 체크)
+                setTimeout(() => {
+                    if (!자동저장중) {
+                        안전한자동저장('목표배분');
+                    }
+                }, 500);
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ 목표배분 동기화 실패:', error);
+                const 상태표시 = document.getElementById('syncStatus');
+                상태표시.textContent = `❌ 동기화 실패: ${error.message}`;
+                상태표시.style.color = '#dc3545';
+                return false;
+                
+            } finally {
+                목표배분동기화중 = false;
+                버튼로딩상태('syncTargetBtn', false);
+                저장소감지중단 = false;
+                
+                // 3초 후 상태 메시지 지우기
+                setTimeout(() => {
+                    const 상태표시 = document.getElementById('syncStatus');
+                    if (상태표시 && 상태표시.textContent.includes('목표배분')) {
+                        상태표시.textContent = '';
+                    }
+                }, 3000);
+            }
+        }
+        
+        // ★ 완전히 수정된 자산데이터 동기화 함수
+        function 자산데이터동기화() {
+            // 중복 실행 방지
+            if (자산동기화중) {
+                console.log('⚠️ 자산데이터 동기화가 이미 진행 중입니다.');
+                return false;
+            }
+            
+            // 디바운스 타이머 설정
+            if (자산동기화타이머) {
+                clearTimeout(자산동기화타이머);
+            }
+            
+            자산동기화타이머 = setTimeout(() => {
+                실제자산데이터동기화();
+            }, 300); // 300ms 지연
+        }
+        
+        function 실제자산데이터동기화() {
+            try {
+                자산동기화중 = true;
+                버튼로딩상태('syncAssetBtn', true);
+                
+                const 상태표시 = document.getElementById('syncStatus');
+                상태표시.textContent = '🔄 자산데이터 동기화 중...';
+                상태표시.style.color = '#007bff';
+                
+                const assets모듈데이터 = localStorage.getItem(STORAGE_KEYS.자산데이터);
+                
+                if (assets모듈데이터) {
+                    const 파싱된데이터 = JSON.parse(assets모듈데이터);
+                    현재자산데이터 = 파싱된데이터;
+                    
+                    상태표시.textContent = '✅ 자산데이터 동기화 완료!';
+                    상태표시.style.color = '#28a745';
+                    
+                    console.log('✅ 자산데이터 동기화 완료');
+                } else {
+                    상태표시.textContent = '⚠️ assets.html 데이터 없음';
+                    상태표시.style.color = '#ffc107';
+                    
+                    현재자산데이터 = 기본테스트데이터생성();
+                }
+                
+                // ★ 안전한 UI 업데이트
+                디바운스된차트업데이트();
+                디바운스된동기화상태표시();
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ 자산데이터 동기화 실패:', error);
+                const 상태표시 = document.getElementById('syncStatus');
+                상태표시.textContent = '❌ 동기화 실패';
+                상태표시.style.color = '#dc3545';
+                return false;
+                
+            } finally {
+                자산동기화중 = false;
+                버튼로딩상태('syncAssetBtn', false);
+                
+                // 3초 후 상태 메시지 지우기
+                setTimeout(() => {
+                    const 상태표시 = document.getElementById('syncStatus');
+                    if (상태표시 && 상태표시.textContent.includes('자산데이터')) {
+                        상태표시.textContent = '';
+                    }
+                }, 3000);
+            }
+        }
+        
+        /*
+        ===========================================
+        ★ 안전한 업데이트 함수들 (디바운스 적용)
+        ===========================================
+        */
+        
+        // ★ 디바운스된 차트 업데이트
+        const 디바운스된차트업데이트 = 디바운스(() => {
+            if (차트업데이트중) return;
+            
+            차트업데이트중 = true;
+            try {
+                안전한차트업데이트();
+            } finally {
+                차트업데이트중 = false;
+            }
+        }, 500);
+        
+        // ★ 디바운스된 동기화 상태 표시
+        const 디바운스된동기화상태표시 = 디바운스(() => {
+            동기화상태표시();
+        }, 300);
+        
+        // ★ 안전한 차트 업데이트
+        function 안전한차트업데이트() {
+            try {
+                // 총자산 표시 업데이트
+                if (현재자산데이터) {
+                    const 총액 = Object.values(현재자산데이터.유형별합계 || {}).reduce((sum, val) => sum + val, 0);
+                    const 총자산요소 = document.getElementById('currentTotalAssets');
+                    if (총자산요소) {
+                        총자산요소.textContent = `${총액.toLocaleString()}만원`;
+                    }
+                }
+                
+                // 차트 업데이트 (안전하게)
+                현재자산배분차트생성();
+                목표대비비교차트생성();
+                포트폴리오분석생성();
+                현재자산목록표시();
+                
+            } catch (error) {
+                console.error('차트 업데이트 오류:', error);
+            }
+        }
+        
+        /*
+        ===========================================
+        ★ 안전한 자동 저장 시스템
+        ===========================================
+        */
+        
+        function 안전한자동저장(타입 = '일반') {
+            // 중복 저장 방지
+            if (자동저장중) {
+                console.log('⚠️ 자동저장이 이미 진행 중입니다.');
+                return false;
+            }
+            
+            // 너무 빈번한 저장 방지 (1초 이내 중복 저장 차단)
+            const 현재시간 = Date.now();
+            if (타입 === '목표배분' && 현재시간 - 마지막목표배분저장시간 < 1000) {
+                console.log('⚠️ 목표배분 저장 주기가 너무 짧습니다.');
+                return false;
+            }
+            if (타입 === '자산' && 현재시간 - 마지막자산저장시간 < 1000) {
+                console.log('⚠️ 자산 저장 주기가 너무 짧습니다.');
+                return false;
+            }
+            
+            try {
+                자동저장중 = true;
+                저장소감지중단 = true; // 저장 중 감지 중단
+                
+                const 저장데이터 = {
+                    투자설정: 투자설정,
+                    목표배분: 목표배분,
+                    투자목표목록: 투자목표목록,
+                    마지막업데이트: new Date().toISOString(),
+                    버전: 'v2.2_fixed'
+                };
+                
+                localStorage.setItem(STORAGE_KEYS.투자계획, JSON.stringify(저장데이터));
+                
+                // 목표배분 별도 저장 (타입이 목표배분인 경우만)
+                if (타입 === '목표배분') {
+                    const 목표배분데이터 = {
+                        목표배분: 목표배분,
+                        마지막업데이트: new Date().toISOString(),
+                        업데이트소스: 'investment_planner'
+                    };
+                    localStorage.setItem(STORAGE_KEYS.목표배분, JSON.stringify(목표배분데이터));
+                    마지막목표배분저장시간 = 현재시간;
+                } else {
+                    마지막자산저장시간 = 현재시간;
+                }
+                
+                자동저장표시();
+                console.log(`✅ ${타입} 자동저장 완료`);
+                
+                return true;
+                
+            } catch (error) {
+                console.error('자동저장 오류:', error);
+                return false;
+            } finally {
+                자동저장중 = false;
+                setTimeout(() => {
+                    저장소감지중단 = false;
+                }, 1000); // 1초 후 감지 재개
+            }
+        }
+        
+        /*
+        ===========================================
+        자동 불러오기 및 기타 함수들
+        ===========================================
+        */
+        
+        function 자동불러오기() {
+            try {
+                console.log('📂 자동 불러오기 시작');
+                
+                const 저장된투자계획 = localStorage.getItem(STORAGE_KEYS.투자계획);
+                if (저장된투자계획) {
+                    const 파싱된데이터 = JSON.parse(저장된투자계획);
+                    
+                    if (파싱된데이터.투자설정) {
+                        투자설정 = { ...투자설정, ...파싱된데이터.투자설정 };
+                    }
+                    
+                    if (파싱된데이터.투자목표목록) {
+                        투자목표목록 = [...파싱된데이터.투자목표목록];
+                    }
+                    
+                    // 목표배분 로드
+                    const 공유목표배분 = localStorage.getItem(STORAGE_KEYS.목표배분);
+                    if (공유목표배분) {
+                        try {
+                            const 파싱된목표배분 = JSON.parse(공유목표배분);
+                            if (파싱된목표배분.목표배분) {
+                                목표배분 = { ...목표배분, ...파싱된목표배분.목표배분 };
+                            }
+                        } catch (e) {
+                            console.error('목표배분 파싱 오류:', e);
+                        }
+                    }
+                }
+                
+                // 자산 데이터 로드
+                setTimeout(() => {
+                    if (!자산동기화중) {
+                        자산데이터동기화();
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('자동불러오기 오류:', error);
+            }
+        }
+        
+        function 자동저장표시() {
+            const 표시기 = document.getElementById('autoSaveIndicator');
+            if (표시기) {
+                표시기.classList.add('show');
+                setTimeout(() => {
+                    표시기.classList.remove('show');
+                }, 2000);
+            }
+        }
+        
+        function 동기화상태표시() {
+            const 상세표시영역 = document.getElementById('syncStatusDetail');
+            if (!상세표시영역) return;
+            
+            const 현재시간 = new Date().toLocaleString('ko-KR');
+            
+            let 자산동기화상태 = 현재자산데이터 ? '✅ 동기화됨' : '❌ 미동기화';
+            let 목표배분동기화상태 = '❌ 미동기화';
+            
+            const assets목표배분 = localStorage.getItem(STORAGE_KEYS.목표배분);
+            if (assets목표배분) {
+                try {
+                    const 파싱된목표배분 = JSON.parse(assets목표배분);
+                    if (파싱된목표배분.목표배분 || 파싱된목표배분.국내주식) {
+                        목표배분동기화상태 = '✅ 동기화됨';
+                    }
+                } catch (e) {
+                    목표배분동기화상태 = '⚠️ 데이터 오류';
+                }
+            }
+            
+            상세표시영역.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <strong>📊 자산 데이터</strong><br>
+                        상태: ${자산동기화상태}<br>
+                        <small style="color: #666;">마지막 확인: ${현재시간}</small>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <strong>🎯 목표 배분</strong><br>
+                        상태: ${목표배분동기화상태}<br>
+                        <small style="color: #666;">마지막 확인: ${현재시간}</small>
+                    </div>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                        <strong>🔄 무한루프 방지</strong><br>
+                        상태: ✅ 활성화<br>
+                        <small style="color: #666;">디바운스 및 플래그 시스템 적용</small>
+                    </div>
+                </div>
+            `;
+        }
+        
+        /*
+        ===========================================
+        기본 테스트 데이터 및 차트 함수들
+        ===========================================
+        */
+        
+        function 기본테스트데이터생성() {
+            return {
+                현재자산: {
+                    '삼성전자': { 유형: '국내 개별주식', 계좌: '삼성증권', 매입가: 5000, 현재가: 5500 },
+                    'KODEX 200': { 유형: '국내 ETF', 계좌: '삼성증권', 매입가: 3000, 현재가: 3200 },
+                    'VTI': { 유형: '해외 ETF', 계좌: '미래에셋', 매입가: 2000, 현재가: 2100 },
+                    '국고채 3년': { 유형: '국내채권', 계좌: '하나은행', 매입가: 1000, 현재가: 1020 },
+                    '예금': { 유형: '현금/예금', 계좌: '하나은행', 매입가: 3000, 현재가: 3000 },
+                    '아파트': { 유형: '부동산', 계좌: '기타', 매입가: 50000, 현재가: 55000 }
+                },
+                유형별합계: {
+                    '국내 개별주식': 5500,
+                    '해외 개별주식': 0,
+                    '국내 ETF': 3200,
+                    '해외 ETF': 2100,
+                    '현금/예금': 3000,
+                    '국내채권': 1020,
+                    '해외채권': 0,
+                    '부동산': 55000,
+                    '기타': 0
+                }
+            };
+        }
+        
+        function 현재자산배분차트생성() {
+            const ctx = document.getElementById('currentAssetChart');
+            if (!ctx || !현재자산데이터) return;
+            
+            try {
+                const 유형별데이터 = 현재자산데이터.유형별합계 || {};
+                const 라벨들 = [];
+                const 데이터들 = [];
+                
+                for (const [유형, 금액] of Object.entries(유형별데이터)) {
+                    if (금액 > 0) {
+                        라벨들.push(유형);
+                        데이터들.push(금액);
+                    }
+                }
+                
+                if (현재자산차트) {
+                    현재자산차트.destroy();
+                    현재자산차트 = null;
+                }
+                
+                if (라벨들.length > 0) {
+                    현재자산차트 = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: 라벨들,
+                            datasets: [{
+                                data: 데이터들,
+                                backgroundColor: 차트색상.slice(0, 라벨들.length),
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: { padding: 20, usePointStyle: true }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const 총액 = 데이터들.reduce((sum, val) => sum + val, 0);
+                                            const 비율 = ((context.parsed / 총액) * 100).toFixed(1);
+                                            return `${context.label}: ${context.parsed.toLocaleString()}만원 (${비율}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('현재자산차트 생성 오류:', error);
+            }
+        }
+        
+        function 목표대비비교차트생성() {
+            const ctx = document.getElementById('targetVsCurrentChart');
+            if (!ctx || !현재자산데이터) return;
+            
+            try {
+                const 총액 = Object.values(현재자산데이터.유형별합계 || {}).reduce((sum, val) => sum + val, 0);
+                if (총액 === 0) return;
+                
+                const 현재비율 = {
+                    '국내주식': ((현재자산데이터.유형별합계['국내 개별주식'] || 0) + (현재자산데이터.유형별합계['국내 ETF'] || 0)) / 총액 * 100,
+                    '해외주식': ((현재자산데이터.유형별합계['해외 개별주식'] || 0) + (현재자산데이터.유형별합계['해외 ETF'] || 0)) / 총액 * 100,
+                    '채권': ((현재자산데이터.유형별합계['국내채권'] || 0) + (현재자산데이터.유형별합계['해외채권'] || 0)) / 총액 * 100,
+                    '부동산': (현재자산데이터.유형별합계['부동산'] || 0) / 총액 * 100,
+                    '현금': (현재자산데이터.유형별합계['현금/예금'] || 0) / 총액 * 100,
+                    '대안투자': (현재자산데이터.유형별합계['기타'] || 0) / 총액 * 100
+                };
+                
+                const 라벨들 = Object.keys(목표배분);
+                const 목표데이터 = 라벨들.map(라벨 => 목표배분[라벨] || 0);
+                const 현재데이터 = 라벨들.map(라벨 => 현재비율[라벨] || 0);
+                
+                if (목표대비차트) {
+                    목표대비차트.destroy();
+                    목표대비차트 = null;
+                }
+                
+                목표대비차트 = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: 라벨들,
+                        datasets: [
+                            {
+                                label: '목표 비율',
+                                data: 목표데이터,
+                                backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                                borderColor: 'rgba(102, 126, 234, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: '현재 비율',
+                                data: 현재데이터,
+                                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 50,
+                                ticks: { callback: function(value) { return value + '%'; } }
+                            }
+                        },
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('목표대비차트 생성 오류:', error);
+            }
+        }
+        
+        function 포트폴리오분석생성() {
+            const 분석영역 = document.getElementById('portfolioAnalysis');
+            if (!분석영역 || !현재자산데이터) return;
+            
+            try {
+                const 총액 = Object.values(현재자산데이터.유형별합계 || {}).reduce((sum, val) => sum + val, 0);
+                if (총액 === 0) {
+                    분석영역.innerHTML = '<p style="text-align: center; color: #666;">분석할 자산 데이터가 없습니다.</p>';
+                    return;
+                }
+                
+                const 분석결과 = [];
+                
+                // 부동산 비중 분석
+                const 부동산비중 = (현재자산데이터.유형별합계['부동산'] || 0) / 총액 * 100;
+                if (부동산비중 > 70) {
+                    분석결과.push({
+                        제목: '부동산 편중 위험',
+                        아이콘: '🚨',
+                        내용: `부동산 비중이 ${부동산비중.toFixed(1)}%로 과도합니다. 유동성 확보 및 분산투자를 권장합니다.`
+                    });
+                } else {
+                    분석결과.push({
+                        제목: '균형잡힌 포트폴리오',
+                        아이콘: '✅',
+                        내용: '현재 포트폴리오가 비교적 균형있게 구성되어 있습니다. 정기적인 리밸런싱을 권장합니다.'
+                    });
+                }
+                
+                분석영역.innerHTML = 분석결과.map(결과 => `
+                    <div class="optimization-card">
+                        <div class="optimization-header">
+                            <div class="optimization-icon">${결과.아이콘}</div>
+                            <div class="optimization-title">${결과.제목}</div>
+                        </div>
+                        <div class="optimization-content">${결과.내용}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('포트폴리오 분석 오류:', error);
+            }
+        }
+        
+        function 현재자산목록표시() {
+            const 목록영역 = document.getElementById('currentAssetsList');
+            if (!목록영역 || !현재자산데이터) return;
+            
+            try {
+                const 자산목록 = 현재자산데이터.현재자산 || {};
+                
+                if (Object.keys(자산목록).length === 0) {
+                    목록영역.innerHTML = '<p style="text-align: center; color: #666;">표시할 자산이 없습니다.</p>';
+                    return;
+                }
+                
+                목록영역.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                        ${Object.entries(자산목록).map(([자산명, 정보]) => `
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #007bff;">
+                                <div style="font-weight: bold; color: #333; margin-bottom: 8px;">${자산명}</div>
+                                <div style="font-size: 0.9em; color: #666; margin-bottom: 5px;">
+                                    📊 ${정보.유형} | 🏦 ${정보.계좌}
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #666;">현재가:</span>
+                                    <span style="font-weight: bold; color: #007bff;">${정보.현재가?.toLocaleString() || 0}만원</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #666;">매입가:</span>
+                                    <span>${정보.매입가?.toLocaleString() || 0}만원</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                    <span style="color: #666;">수익률:</span>
+                                    <span style="font-weight: bold; color: ${(정보.현재가 >= 정보.매입가) ? '#28a745' : '#dc3545'};">
+                                        ${정보.매입가 > 0 ? (((정보.현재가 - 정보.매입가) / 정보.매입가) * 100).toFixed(1) : 0}%
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('자산목록 표시 오류:', error);
+            }
+        }
+        
+        function 탭변경(탭이름) {
+            try {
+                // 모든 탭 비활성화
+                document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // 선택된 탭 활성화
+                event.target.classList.add('active');
+                document.getElementById(탭이름).classList.add('active');
+                
+                // 분석 탭으로 이동시 차트 업데이트 (디바운스 적용)
+                if (탭이름 === 'analysis') {
+                    setTimeout(() => {
+                        if (!차트업데이트중) {
+                            디바운스된차트업데이트();
+                            디바운스된동기화상태표시();
+                        }
+                    }, 200);
+                }
+            } catch (error) {
+                console.error('탭 변경 오류:', error);
+            }
+        }
+        
+        /*
+        ===========================================
+        ★ 안전한 초기화 (무한루프 방지)
+        ===========================================
+        */
+        
+        window.addEventListener('load', function() {
+            console.log('🚀 투자계획 시스템 (무한루프 수정) 초기화 시작');
+            
+            // 초기화 지연 (DOM 완전 로드 대기)
+            setTimeout(() => {
+                자동불러오기();
+                
+                // 초기 화면 업데이트 (한 번만)
+                setTimeout(() => {
+                    if (!차트업데이트중) {
+                        디바운스된차트업데이트();
+                        디바운스된동기화상태표시();
+                    }
+                }, 800);
+            }, 300);
+            
+            console.log('✅ 무한루프 방지 시스템 활성화');
+        });
+        
+        // ★ 안전한 저장소 변경 감지 (무한루프 방지)
+        window.addEventListener('storage', function(e) {
+            // 자신이 저장한 데이터는 무시
+            if (저장소감지중단) {
+                console.log('🔒 저장소 감지 중단 중 - 이벤트 무시');
+                return;
+            }
+            
+            // 동기화 중이면 무시
+            if (자산동기화중 || 목표배분동기화중) {
+                console.log('🔒 동기화 진행 중 - storage 이벤트 무시');
+                return;
+            }
+            
+            // 너무 빈번한 감지 방지
+            if (e.key === STORAGE_KEYS.목표배분) {
+                console.log('📊 목표배분 변경 감지 - 디바운스 동기화');
+                디바운스(() => {
+                    if (!목표배분동기화중) {
+                        목표배분동기화();
+                    }
+                }, 1000)();
+            }
+            
+            if (e.key === STORAGE_KEYS.자산데이터) {
+                console.log('💰 자산데이터 변경 감지 - 디바운스 동기화');
+                디바운스(() => {
+                    if (!자산동기화중) {
+                        자산데이터동기화();
+                    }
+                }, 1000)();
+            }
+        });
+        
+        // 페이지 언로드 시 정리
+        window.addEventListener('beforeunload', function() {
+            // 타이머들 정리
+            if (자산동기화타이머) clearTimeout(자산동기화타이머);
+            if (목표배분동기화타이머) clearTimeout(목표배분동기화타이머);
+            if (차트업데이트타이머) clearTimeout(차트업데이트타이머);
+            if (자동저장타이머) clearTimeout(자동저장타이머);
+            
+            // 차트 정리
+            if (현재자산차트) {
+                현재자산차트.destroy();
+                현재자산차트 = null;
+            }
+            if (목표대비차트) {
+                목표대비차트.destroy();
+                목표대비차트 = null;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자산 현황 파악 및 관리 시스템</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /*
+        ===========================================
+        스타일 설정 구역 (수정 가능)
+        ===========================================
+        */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .total-assets {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .nav-tab:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+        
+        .chart-canvas {
+            position: relative;
+            height: 300px;
+        }
+        
+        .management-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .section-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title .icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .asset-form {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .asset-list {
+            margin-top: 20px;
+        }
+        
+        .asset-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .asset-item:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .asset-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .asset-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .asset-type {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .asset-amount {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .asset-percentage {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .asset-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+        
+        .alerts-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+        
+        .alert-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .alert-high {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-medium {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .alert-icon {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+        
+        .data-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .history-section {
+            margin-top: 30px;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .history-date {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .history-change {
+            font-weight: 500;
+        }
+        
+        .change-positive {
+            color: #28a745;
+        }
+        
+        .change-negative {
+            color: #dc3545;
+        }
+        
+        /* 계좌별, 유형별 분류 스타일 */
+        .asset-category-header {
+            background: #667eea;
+            color: white;
+            padding: 10px 15px;
+            margin: 20px 0 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .asset-subcategory-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            margin: 15px 0 5px 0;
+            border-left: 4px solid #667eea;
+            font-weight: bold;
+            font-size: 1.0em;
+            color: #333;
+        }
+        
+        .asset-subcategory-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 자동 저장 표시 */
+        .auto-save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .auto-save-indicator.show {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .asset-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .asset-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .asset-actions {
+                margin-top: 10px;
+            }
+            
+            .data-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 자동 저장 표시기 -->
+    <div class="auto-save-indicator" id="autoSaveIndicator">
+        💾 자동 저장됨
+    </div>
+
+    <div class="container">
+        <!-- 헤더 구역 -->
+        <div class="header">
+            <h1>📊 자산 현황 파악 및 관리 시스템</h1>
+            <p>응급의학과 전문의를 위한 종합 자산관리</p>
+            <div class="total-assets">
+                <span>총 자산: <span id="totalAssets">0원</span></span>
+                <span>최종 업데이트: <span id="lastUpdate">-</span></span>
+            </div>
+        </div>
+        
+        <!-- 탭 네비게이션 -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="탭변경('overview')">📊 현황 파악</button>
+            <button class="nav-tab" onclick="탭변경('management')">🛠️ 자산 관리</button>
+            <button class="nav-tab" onclick="탭변경('settings')">⚙️ 기본 설정</button>
+            <button class="nav-tab" onclick="탭변경('history')">📈 변화 추적</button>
+        </div>
+        
+        <!-- 현황 파악 탭 -->
+        <div id="overview" class="tab-content active">
+            <!-- 차트 구역 -->
+            <div class="charts-row">
+                <!-- 부동산 vs 기타 자산 차트 -->
+                <div class="chart-container">
+                    <div class="chart-title">부동산 vs 기타 자산</div>
+                    <div class="chart-canvas">
+                        <canvas id="realEstateVsOthersChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 부동산 제외 자산 배분 차트 -->
+                <div class="chart-container">
+                    <div class="chart-title">부동산 제외 자산 배분</div>
+                    <div class="chart-canvas">
+                        <canvas id="nonRealEstateChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 목표 대비 현황 차트 (부동산 포함) -->
+            <div class="charts-row">
+                <div class="chart-container">
+                    <div class="chart-title">목표 vs 현재 자산배분 비교</div>
+                    <div class="chart-canvas">
+                        <canvas id="targetComparisonChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 전체 자산 배분 차트 -->
+                <div class="chart-container">
+                    <div class="chart-title">전체 자산 배분</div>
+                    <div class="chart-canvas">
+                        <canvas id="totalAllocationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 위험 알림 구역 -->
+            <div class="alerts-section">
+                <div class="alert-title">
+                    <span class="alert-icon">⚠️</span>
+                    포트폴리오 위험 분석
+                </div>
+                <div id="alertsContainer">
+                    <!-- 위험 알림이 여기에 동적으로 추가됩니다 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 기본 설정 탭 -->
+        <div id="settings" class="tab-content">
+            <!-- 목표 배분 설정 -->
+            <div class="management-section">
+                <div class="section-title">
+                    <span class="icon">🎯</span>
+                    목표 자산 배분 설정 (개인 투자 성향)
+                </div>
+                <p style="color: #666; margin-bottom: 20px;">
+                    💡 본인의 투자 성향에 맞게 목표 비율을 설정하세요. 총 합계가 100%가 되어야 합니다.
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="form-group">
+                        <label>🏢 국내주식 목표 비율 (%)</label>
+                        <input type="number" id="target_국내주식" placeholder="25" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>🌍 해외주식 목표 비율 (%)</label>
+                        <input type="number" id="target_해외주식" placeholder="30" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>📄 채권 목표 비율 (%)</label>
+                        <input type="number" id="target_채권" placeholder="20" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>🏠 부동산 목표 비율 (%)</label>
+                        <input type="number" id="target_부동산" placeholder="15" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>🏗️ 대안투자 목표 비율 (%)</label>
+                        <input type="number" id="target_대안투자" placeholder="5" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>💵 현금 목표 비율 (%)</label>
+                        <input type="number" id="target_현금" placeholder="5" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight: bold; color: #667eea;">📊 총 합계</label>
+                        <input type="text" id="target_총합계" readonly style="background: #f8f9fa; font-weight: bold;" value="0%">
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" onclick="목표배분적용()" style="font-size: 1.1em; padding: 15px 30px;">
+                        🎯 목표 배분 적용하기
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 개인화 설정 -->
+            <div class="management-section">
+                <div class="section-title">
+                    <span class="icon">🎨</span>
+                    개인화 설정
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>📝 시스템 제목</label>
+                        <input type="text" id="setting_제목" placeholder="자산관리 모니터링 시스템">
+                    </div>
+                    <div class="form-group">
+                        <label>👤 사용자 이름/부제목</label>
+                        <input type="text" id="setting_부제목" placeholder="응급의학과 전문의를 위한 종합 자산관리">
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="개인화설정적용()" style="font-size: 1.1em; padding: 15px 30px;">
+                        🎨 개인화 설정 적용하기
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 프리셋 설정 -->
+            <div class="management-section">
+                <div class="section-title">
+                    <span class="icon">📋</span>
+                    투자 성향별 프리셋
+                </div>
+                <p style="color: #666; margin-bottom: 20px;">
+                    💡 본인의 투자 성향에 맞는 프리셋을 선택하면 목표 배분이 자동으로 설정됩니다.
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <button class="btn btn-secondary" onclick="프리셋적용('보수적')" style="padding: 15px;">
+                        🛡️ 보수적 투자<br>
+                        <small>안전성 중시</small>
+                    </button>
+                    <button class="btn btn-secondary" onclick="프리셋적용('균형형')" style="padding: 15px;">
+                        ⚖️ 균형형 투자<br>
+                        <small>안정성과 수익성 조화</small>
+                    </button>
+                    <button class="btn btn-secondary" onclick="프리셋적용('공격적')" style="padding: 15px;">
+                        🚀 공격적 투자<br>
+                        <small>수익성 중시</small>
+                    </button>
+                    <button class="btn btn-secondary" onclick="프리셋적용('의료진추천')" style="padding: 15px;">
+                        👨‍⚕️ 의료진 추천<br>
+                        <small>바쁜 의료진 맞춤</small>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 자산 관리 탭 -->
+        <div id="management" class="tab-content">
+            <!-- 새 자산 추가 -->
+            <div class="management-section">
+                <div class="section-title">
+                    <span class="icon">➕</span>
+                    새 자산 추가
+                </div>
+                <div class="asset-form">
+                    <div class="form-group">
+                        <label>자산명</label>
+                        <input type="text" id="newAssetName" placeholder="예: 삼성전자">
+                    </div>
+                    <div class="form-group">
+                        <label>자산 유형</label>
+                        <select id="newAssetType">
+                            <option value="국내 개별주식">국내 개별주식</option>
+                            <option value="해외 개별주식">해외 개별주식</option>
+                            <option value="국내 ETF">국내 ETF</option>
+                            <option value="해외 ETF">해외 ETF</option>
+                            <option value="현금/예금">현금/예금</option>
+                            <option value="국내채권">국내채권</option>
+                            <option value="해외채권">해외채권</option>
+                            <option value="부동산">부동산</option>
+                            <option value="대안투자">대안투자</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>계좌</label>
+                        <select id="newAssetAccount">
+                            <option value="삼성증권">삼성증권</option>
+                            <option value="미래에셋">미래에셋</option>
+                            <option value="하나은행">하나은행</option>
+                            <option value="연금저축">연금저축</option>
+                            <option value="ISA">ISA</option>
+                            <option value="IRP">IRP</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>매입가 (만원)</label>
+                        <input type="number" id="newAssetBuyPrice" placeholder="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>현재가 (만원)</label>
+                        <input type="number" id="newAssetCurrentPrice" placeholder="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>수익률 (%)</label>
+                        <input type="text" id="newAssetReturn" readonly style="background: #f8f9fa;" placeholder="자동계산">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="자산추가()">추가</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 데이터 관리 -->
+<div class="management-section">
+    <div class="section-title">
+        <span class="icon">💾</span>
+        데이터 관리
+    </div>
+    <div class="data-controls">
+        <button class="btn btn-success" onclick="데이터저장()">💾 데이터 저장</button>
+        <button class="btn btn-secondary" onclick="데이터불러오기()">📂 데이터 불러오기</button>
+        <button class="btn btn-primary" onclick="샘플데이터로드()">🔄 샘플 데이터 로드</button>
+        <button class="btn btn-danger" onclick="데이터초기화()">🗑️데이터 초기화</button>
+    </div>
+    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="파일불러오기(event)">
+</div>
+
+            
+            <!-- 현재 자산 목록 -->
+            <div class="management-section">
+                <div class="section-title">
+                    <span class="icon">📋</span>
+                    현재 자산 목록
+                </div>
+                
+                <!-- 계좌별 자산 보기 -->
+                <div class="asset-category-header">
+                    📁 (1) 계좌별 현재 자산
+                </div>
+                <div id="assetListByAccount" class="asset-list">
+                    <!-- 계좌별 자산 목록이 여기에 동적으로 추가됩니다 -->
+                </div>
+                
+                <!-- 자산 유형별 보기 -->
+                <div class="asset-category-header">
+                    📊 (2) 자산 유형별 자산
+                </div>
+                <div id="assetListByType" class="asset-list">
+                    <!-- 자산 유형별 목록이 여기에 동적으로 추가됩니다 -->
+                </div>
+            </div>
+            
+            <!-- 데이터 관리 -->
+            <div class="management-section">
+                <div class="section-title">
+                    <span class="icon">💾</span>
+                    데이터 관리
+                </div>
+                <div class="data-controls">
+                    <button class="btn btn-success" onclick="데이터저장()">💾 데이터 저장</button>
+                    <button class="btn btn-secondary" onclick="데이터불러오기()">📂 데이터 불러오기</button>
+                    <button class="btn btn-primary" onclick="샘플데이터로드()">🔄 샘플 데이터 로드</button>
+                    <button class="btn btn-danger" onclick="데이터초기화()">🗑️데이터 초기화</button>
+                </div>
+                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="파일불러오기(event)">
+                
+                <!-- 자동 저장 상태 표시 -->
+                <div style="margin-top: 15px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                    <h4 style="color: #1976d2; margin-bottom: 10px;">💾 자동 저장 상태</h4>
+                    <div id="autoSaveStatus">
+                        자동 저장 활성화: 데이터 변경 시 자동으로 브라우저에 저장됩니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 변화 추적 탭 -->
+        <div id="history" class="tab-content">
+            <div class="management-section">
+                <div class="section-title">
+                    <span class="icon">📈</span>
+                    자산 변화 기록
+                </div>
+                <div id="historyList" class="history-section">
+                    <!-- 히스토리가 여기에 동적으로 추가됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+        ===========================================
+        전역 변수 및 데이터 구조
+        ===========================================
+        */
+        
+        // 로컬 저장소 키 이름 (일관성 유지)
+    const STORAGE_KEYS = {
+    자산데이터: 'shared_asset_data',           // 기존: 'module1_asset_data'
+    목표배분: 'shared_target_allocation',      // 기존: 'module1_target_allocation'
+    설정데이터: 'module1_settings',
+    히스토리: 'module1_history'
+        };
+        
+        // 현재 자산 데이터 (개별 자산 정보 포함) - 계좌 정보 추가
+        let 현재자산 = {};
+        
+        // 자산 유형별 합계 데이터 - 새로운 유형으로 업데이트
+        let 유형별합계 = {
+            '국내 개별주식': 0,
+            '해외 개별주식': 0,
+            '국내 ETF': 0,
+            '해외 ETF': 0,
+            '현금/예금': 0,
+            '국내채권': 0,
+            '해외채권': 0,
+            '부동산': 0,
+            '기타': 0
+        };
+        
+        // 계좌별 합계 데이터
+        let 계좌별합계 = {
+            '삼성증권': 0,
+            '미래에셋': 0,
+            '하나은행': 0,
+            '연금저축': 0,
+            'ISA': 0,
+            'IRP': 0,
+            '기타': 0
+        };
+        
+        // 목표 자산 배분 (%) - 부동산 추가
+        let 목표배분 = {
+            '국내주식': 25.0,
+            '해외주식': 30.0,
+            '채권': 20.0,
+            '부동산': 15.0,
+            '대안투자': 5.0,
+            '현금': 5.0
+        };
+        
+        // 자산 변화 히스토리
+        let 자산히스토리 = [];
+        
+        // 차트 객체들
+        let 부동산대기타차트 = null;
+        let 부동산제외차트 = null;
+        let 목표대비차트 = null;
+        let 전체배분차트 = null;
+        
+        // 색상 설정
+        const 차트색상 = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#E7E9ED'
+        ];
+        
+        /*
+        ===========================================
+        자동 저장/불러오기 함수들 (★ 핵심 개선 부분)
+        ===========================================
+        */
+        
+        // 자동 저장 함수
+        function 자동저장() {
+            try {
+                const 저장데이터 = {
+                    현재자산: 현재자산,
+                    유형별합계: 유형별합계,
+                    계좌별합계: 계좌별합계,
+                    목표배분: 목표배분,
+                    자산히스토리: 자산히스토리,
+                    마지막업데이트: new Date().toISOString(),
+                    버전: 'v2.0'
+                };
+                
+                // 각각을 별도로 저장
+                localStorage.setItem(STORAGE_KEYS.자산데이터, JSON.stringify(저장데이터));
+                localStorage.setItem(STORAGE_KEYS.히스토리, JSON.stringify(자산히스토리));
+                localStorage.setItem(STORAGE_KEYS.목표배분, JSON.stringify(목표배분));
+                
+                // 자동 저장 표시
+                자동저장표시();
+                
+                // 부모 창(index.html)에 데이터 전송
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'MODULE1_DATA_UPDATE',
+                        data: 저장데이터
+                    }, '*');
+                    
+                    // 저장 완료 알림 추가
+                    window.parent.postMessage({
+                        type: 'DATA_SAVED',
+                        module: 'module1'
+                    }, '*');
+                }
+                
+            } catch (error) {
+                console.error('자동 저장 실패:', error);
+            }
+        }
+        
+        // 자동 저장 표시
+        function 자동저장표시() {
+            const 표시기 = document.getElementById('autoSaveIndicator');
+            표시기.classList.add('show');
+            setTimeout(() => {
+                표시기.classList.remove('show');
+            }, 2000);
+        }
+        
+        // 자동 불러오기 함수
+        function 자동불러오기() {
+            try {
+                // 자산 데이터 불러오기
+                const 저장된자산데이터 = localStorage.getItem(STORAGE_KEYS.자산데이터);
+                if (저장된자산데이터) {
+                    const 데이터 = JSON.parse(저장된자산데이터);
+                    
+                    현재자산 = 데이터.현재자산 || {};
+                    유형별합계 = 데이터.유형별합계 || {
+                        '국내 개별주식': 0, '해외 개별주식': 0, '국내 ETF': 0, '해외 ETF': 0,
+                        '현금/예금': 0, '국내채권': 0, '해외채권': 0, '부동산': 0, '기타': 0
+                    };
+                    계좌별합계 = 데이터.계좌별합계 || {
+                        '삼성증권': 0, '미래에셋': 0, '하나은행': 0, '연금저축': 0,
+                        'ISA': 0, 'IRP': 0, '기타': 0
+                    };
+                    자산히스토리 = 데이터.자산히스토리 || [];
+                }
+                
+                // 목표 배분 불러오기
+                const 저장된목표배분 = localStorage.getItem(STORAGE_KEYS.목표배분);
+                if (저장된목표배분) {
+                    목표배분 = JSON.parse(저장된목표배분);
+                }
+                
+                // 데이터 무결성 확보를 위해 재계산
+                유형별합계업데이트();
+                계좌별합계업데이트();
+                
+                console.log('✅ 저장된 데이터 자동 불러오기 완료');
+                
+                // 상태 표시 업데이트
+                document.getElementById('autoSaveStatus').innerHTML = 
+                    `마지막 저장: ${new Date().toLocaleString()}<br>총 자산: ${Object.keys(현재자산).length}개`;
+                
+                return true;  // 성공 시 true 반환
+                
+            } catch (error) {
+                console.error('자동 불러오기 실패:', error);
+                return false;  // 실패 시 false 반환
+            }
+        }
+        
+        // window 객체에 함수들 노출 (부모 창에서 접근 가능하도록)
+        window.자동불러오기 = 자동불러오기;
+        window.전체업데이트 = 전체업데이트;
+        
+        /*
+        ===========================================
+        기본 계산 함수들
+        ===========================================
+        */
+        
+        // 총 자산 계산 (만원 단위)
+        function 총자산계산() {
+            return Object.values(유형별합계).reduce((sum, value) => sum + value, 0);
+        }
+        
+        // 억원 단위로 변환
+        function 만원을억원으로(만원) {
+            return 만원 / 10000;
+        }
+        
+        // 숫자를 천단위 콤마로 포맷
+        function 숫자포맷(숫자) {
+            return 숫자.toLocaleString();
+        }
+        
+        // 수익률 계산
+        function 수익률계산(매입가, 현재가) {
+            if (매입가 <= 0) return 0;
+            return ((현재가 - 매입가) / 매입가 * 100);
+        }
+        
+        // 실시간 수익률 업데이트
+        function 수익률실시간업데이트() {
+            const 매입가 = parseFloat(document.getElementById('newAssetBuyPrice').value) || 0;
+            const 현재가 = parseFloat(document.getElementById('newAssetCurrentPrice').value) || 0;
+            const 수익률 = 수익률계산(매입가, 현재가);
+            document.getElementById('newAssetReturn').value = 수익률.toFixed(2) + '%';
+        }
+        
+        // 현재 배분 비율 계산
+        function 현재배분비율계산() {
+            const 총액 = 총자산계산();
+            const 비율 = {};
+            
+            for (const [자산명, 금액] of Object.entries(유형별합계)) {
+                if (금액 > 0) {
+                    비율[자산명] = (금액 / 총액 * 100).toFixed(1);
+                }
+            }
+            
+            return 비율;
+        }
+        
+        // 위험도 분석 - 새로운 유형에 맞게 업데이트
+        function 위험도분석() {
+            const 위험목록 = [];
+            const 총액 = 총자산계산();
+            
+            if (총액 === 0) return 위험목록;
+            
+            // 국내주식 편중 검사 (개별주식 + ETF)
+            const 국내주식비율 = ((유형별합계['국내 개별주식'] + 유형별합계['국내 ETF']) / 총액) * 100;
+            if (국내주식비율 > 40) {
+                위험목록.push({
+                    수준: 'high',
+                    아이콘: '🚨',
+                    메시지: `국내주식 편중 위험: ${국내주식비율.toFixed(1)}% (권장: 25% 이하)`
+                });
+            }
+            
+            // 해외주식 부족 검사
+            const 해외주식비율 = ((유형별합계['해외 개별주식'] + 유형별합계['해외 ETF']) / 총액) * 100;
+            if (해외주식비율 < 20) {
+                위험목록.push({
+                    수준: 'medium',
+                    아이콘: '📈',
+                    메시지: `해외주식 확대 필요: ${해외주식비율.toFixed(1)}% (목표: 30%)`
+                });
+            }
+            
+            // 채권 부족 검사
+            const 채권비율 = ((유형별합계['국내채권'] + 유형별합계['해외채권']) / 총액) * 100;
+            if (채권비율 < 15) {
+                위험목록.push({
+                    수준: 'medium',
+                    아이콘: '🛡️',
+                    메시지: `채권 비중 확대 필요: ${채권비율.toFixed(1)}% (목표: 20%)`
+                });
+            }
+            
+            // 부동산 과다 편중 검사
+            const 부동산비율 = (유형별합계['부동산'] / 총액) * 100;
+            if (부동산비율 > 20) {
+                위험목록.push({
+                    수준: 'medium',
+                    아이콘: '🏠',
+                    메시지: `부동산 편중 주의: ${부동산비율.toFixed(1)}% (권장: 15% 이하)`
+                });
+            }
+            
+            return 위험목록;
+        }
+        
+        /*
+        ===========================================
+        설정 탭 관련 함수들
+        ===========================================
+        */
+        
+        // 설정 탭 초기화 (현재 값들을 입력 필드에 표시)
+        function 설정탭초기화() {
+            // 현재 목표 배분을 설정 탭에 표시
+            document.getElementById('target_국내주식').value = 목표배분['국내주식'] || 0;
+            document.getElementById('target_해외주식').value = 목표배분['해외주식'] || 0;
+            document.getElementById('target_채권').value = 목표배분['채권'] || 0;
+            document.getElementById('target_부동산').value = 목표배분['부동산'] || 0;
+            document.getElementById('target_대안투자').value = 목표배분['대안투자'] || 0;
+            document.getElementById('target_현금').value = 목표배분['현금'] || 0;
+            
+            목표배분합계계산();
+        }
+        
+        // 목표 배분 합계 실시간 계산
+        function 목표배분합계계산() {
+            const 국내주식 = parseFloat(document.getElementById('target_국내주식').value) || 0;
+            const 해외주식 = parseFloat(document.getElementById('target_해외주식').value) || 0;
+            const 채권 = parseFloat(document.getElementById('target_채권').value) || 0;
+            const 부동산 = parseFloat(document.getElementById('target_부동산').value) || 0;
+            const 대안투자 = parseFloat(document.getElementById('target_대안투자').value) || 0;
+            const 현금 = parseFloat(document.getElementById('target_현금').value) || 0;
+            
+            const 합계 = 국내주식 + 해외주식 + 채권 + 부동산 + 대안투자 + 현금;
+            
+            const 합계표시 = document.getElementById('target_총합계');
+            합계표시.value = `${합계.toFixed(1)}%`;
+            
+            // 100%가 아니면 경고 색상
+            if (Math.abs(합계 - 100) > 0.1) {
+                합계표시.style.color = '#dc3545';
+                합계표시.style.fontWeight = 'bold';
+            } else {
+                합계표시.style.color = '#28a745';
+                합계표시.style.fontWeight = 'bold';
+            }
+        }
+        
+        // 목표 배분 적용
+        function 목표배분적용() {
+            const 새목표배분 = {
+                '국내주식': parseFloat(document.getElementById('target_국내주식').value) || 0,
+                '해외주식': parseFloat(document.getElementById('target_해외주식').value) || 0,
+                '채권': parseFloat(document.getElementById('target_채권').value) || 0,
+                '부동산': parseFloat(document.getElementById('target_부동산').value) || 0,
+                '대안투자': parseFloat(document.getElementById('target_대안투자').value) || 0,
+                '현금': parseFloat(document.getElementById('target_현금').value) || 0
+            };
+            
+            const 합계 = Object.values(새목표배분).reduce((sum, val) => sum + val, 0);
+            
+            if (Math.abs(합계 - 100) > 0.1) {
+                alert('⚠️ 목표 배분의 총 합계가 100%가 아닙니다.\n현재 합계: ' + 합계.toFixed(1) + '%\n\n다시 조정해주세요.');
+                return;
+            }
+            
+            // 전역 목표배분 변수 업데이트
+            목표배분['국내주식'] = 새목표배분['국내주식'];
+            목표배분['해외주식'] = 새목표배분['해외주식'];
+            목표배분['채권'] = 새목표배분['채권'];
+            목표배분['부동산'] = 새목표배분['부동산'];
+            목표배분['대안투자'] = 새목표배분['대안투자'];
+            목표배분['현금'] = 새목표배분['현금'];
+            
+            // 자동 저장
+            자동저장();
+            
+            전체업데이트();
+            alert('🎯 목표 배분이 성공적으로 적용되었습니다!');
+        }
+        
+        // 개인화 설정 적용
+        function 개인화설정적용() {
+            const 새제목 = document.getElementById('setting_제목').value.trim();
+            const 새부제목 = document.getElementById('setting_부제목').value.trim();
+            
+            if (새제목) {
+                document.querySelector('.header h1').textContent = '📊 ' + 새제목;
+            }
+            
+            if (새부제목) {
+                document.querySelector('.header p').textContent = 새부제목;
+            }
+            
+            // 자동 저장
+            자동저장();
+            
+            alert('🎨 개인화 설정이 적용되었습니다!');
+        }
+        
+        // 투자 성향별 프리셋 적용
+        function 프리셋적용(성향) {
+            let 프리셋배분 = {};
+            
+            switch(성향) {
+                case '보수적':
+                    프리셋배분 = {
+                        '국내주식': 15.0,
+                        '해외주식': 20.0,
+                        '채권': 35.0,
+                        '부동산': 20.0,
+                        '대안투자': 5.0,
+                        '현금': 5.0
+                    };
+                    break;
+                case '균형형':
+                    프리셋배분 = {
+                        '국내주식': 25.0,
+                        '해외주식': 30.0,
+                        '채권': 20.0,
+                        '부동산': 15.0,
+                        '대안투자': 5.0,
+                        '현금': 5.0
+                    };
+                    break;
+                case '공격적':
+                    프리셋배분 = {
+                        '국내주식': 35.0,
+                        '해외주식': 40.0,
+                        '채권': 10.0,
+                        '부동산': 10.0,
+                        '대안투자': 3.0,
+                        '현금': 2.0
+                    };
+                    break;
+                case '의료진추천':
+                    프리셋배분 = {
+                        '국내주식': 20.0,
+                        '해외주식': 35.0,
+                        '채권': 25.0,
+                        '부동산': 15.0,
+                        '대안투자': 3.0,
+                        '현금': 2.0
+                    };
+                    break;
+            }
+            
+            // 입력 필드에 프리셋 값 적용
+            document.getElementById('target_국내주식').value = 프리셋배분['국내주식'];
+            document.getElementById('target_해외주식').value = 프리셋배분['해외주식'];
+            document.getElementById('target_채권').value = 프리셋배분['채권'];
+            document.getElementById('target_부동산').value = 프리셋배분['부동산'];
+            document.getElementById('target_대안투자').value = 프리셋배분['대안투자'];
+            document.getElementById('target_현금').value = 프리셋배분['현금'];
+            
+            목표배분합계계산();
+            alert(`📋 ${성향} 투자 프리셋이 적용되었습니다!\n"목표 배분 적용하기" 버튼을 눌러서 최종 적용하세요.`);
+        }
+        
+        /*
+        ===========================================
+        기존 함수들 수정 (자동저장 기능 추가)
+        ===========================================
+        */
+        
+        function 탭변경(탭이름) {
+            // 모든 탭 비활성화
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 선택된 탭 활성화
+            event.target.classList.add('active');
+            document.getElementById(탭이름).classList.add('active');
+            
+            // 현황파악 탭으로 이동시 차트 업데이트
+            if (탭이름 === 'overview') {
+                // 약간의 지연을 두고 차트 업데이트 (탭 전환 애니메이션 완료 후)
+                setTimeout(() => {
+                    부동산대기타차트생성();
+                    부동산제외차트생성();
+                    목표대비차트생성();
+                    전체배분차트생성();
+                    위험알림표시();
+                    총자산표시업데이트();
+                }, 100);
+            }
+            
+            // 설정 탭이 선택되면 설정 탭 초기화
+            if (탭이름 === 'settings') {
+                setTimeout(() => {
+                    설정탭초기화();
+                    // 목표 배분 입력 필드에 실시간 계산 이벤트 추가
+                    const 목표입력필드들 = ['target_국내주식', 'target_해외주식', 'target_채권', 'target_부동산', 'target_대안투자', 'target_현금'];
+                    목표입력필드들.forEach(필드명 => {
+                        const 요소 = document.getElementById(필드명);
+                        if (요소) {
+                            요소.addEventListener('input', 목표배분합계계산);
+                        }
+                    });
+                }, 100);
+            }
+            
+            // 히스토리 탭이 선택되면 히스토리 업데이트
+            if (탭이름 === 'history') {
+                히스토리표시();
+            }
+        }
+        
+        /*
+        ===========================================
+        자산 관리 함수들 (자동저장 기능 추가)
+        ===========================================
+        */
+        
+        // 새 자산 추가 - 계좌 정보 포함
+        function 자산추가() {
+            const 자산명 = document.getElementById('newAssetName').value.trim();
+            const 자산유형 = document.getElementById('newAssetType').value;
+            const 계좌 = document.getElementById('newAssetAccount').value;
+            const 매입가 = parseFloat(document.getElementById('newAssetBuyPrice').value) || 0;
+            const 현재가 = parseFloat(document.getElementById('newAssetCurrentPrice').value) || 0;
+            
+            if (!자산명) {
+                alert('자산명을 입력해주세요.');
+                return;
+            }
+            
+            if (매입가 <= 0) {
+                alert('유효한 매입가를 입력해주세요.');
+                return;
+            }
+            
+            if (현재가 <= 0) {
+                alert('유효한 현재가를 입력해주세요.');
+                return;
+            }
+            
+            // 수익률 계산
+            const 수익률 = 수익률계산(매입가, 현재가);
+            
+            // 개별 자산 저장 - 계좌 정보 추가
+            현재자산[자산명] = {
+                유형: 자산유형,
+                계좌: 계좌,
+                매입가: 매입가,
+                현재가: 현재가,
+                수익률: 수익률
+            };
+            
+            // 유형별, 계좌별 합계 업데이트
+            유형별합계업데이트();
+            계좌별합계업데이트();
+            
+            // 히스토리에 기록
+            자산히스토리.push({
+                날짜: new Date().toLocaleString(),
+                동작: '추가',
+                자산명: 자산명,
+                자산유형: 자산유형,
+                계좌: 계좌,
+                매입가: 매입가,
+                현재가: 현재가,
+                수익률: 수익률.toFixed(2),
+                총자산: 총자산계산()
+            });
+            
+            // 폼 초기화
+            document.getElementById('newAssetName').value = '';
+            document.getElementById('newAssetBuyPrice').value = '';
+            document.getElementById('newAssetCurrentPrice').value = '';
+            document.getElementById('newAssetReturn').value = '';
+            
+            // 자동 저장
+            자동저장();
+            
+            // 화면 업데이트
+            전체업데이트();
+            
+            alert(`${자산명}이(가) 성공적으로 추가되었습니다.\n수익률: ${수익률.toFixed(2)}%`);
+        }
+        
+        // 유형별 합계 업데이트
+        function 유형별합계업데이트() {
+            // 모든 유형별 합계 초기화
+            for (const 유형 in 유형별합계) {
+                유형별합계[유형] = 0;
+            }
+            
+            // 개별 자산의 현재가를 유형별로 합산
+            for (const [자산명, 자산정보] of Object.entries(현재자산)) {
+                const 유형 = 자산정보.유형;
+                if (유형별합계.hasOwnProperty(유형)) {
+                    유형별합계[유형] += 자산정보.현재가;
+                } else {
+                    유형별합계[유형] = 자산정보.현재가;
+                }
+            }
+        }
+        
+        // 계좌별 합계 업데이트
+        function 계좌별합계업데이트() {
+            // 모든 계좌별 합계 초기화
+            for (const 계좌 in 계좌별합계) {
+                계좌별합계[계좌] = 0;
+            }
+            
+            // 개별 자산의 현재가를 계좌별로 합산
+            for (const [자산명, 자산정보] of Object.entries(현재자산)) {
+                const 계좌 = 자산정보.계좌;
+                if (계좌별합계.hasOwnProperty(계좌)) {
+                    계좌별합계[계좌] += 자산정보.현재가;
+                } else {
+                    계좌별합계[계좌] = 자산정보.현재가;
+                }
+            }
+        }
+        
+        // 자산 수정
+        function 자산수정(자산명) {
+            const 자산정보 = 현재자산[자산명];
+            if (!자산정보) return;
+            
+            const 새매입가 = prompt(`${자산명}의 새로운 매입가를 입력하세요 (만원):`, 자산정보.매입가);
+            if (새매입가 === null) return;
+            
+            const 새현재가 = prompt(`${자산명}의 새로운 현재가를 입력하세요 (만원):`, 자산정보.현재가);
+            if (새현재가 === null) return;
+            
+            if (!isNaN(새매입가) && !isNaN(새현재가) && parseFloat(새매입가) > 0 && parseFloat(새현재가) > 0) {
+                const 이전정보 = { ...자산정보 };
+                
+                현재자산[자산명].매입가 = parseFloat(새매입가);
+                현재자산[자산명].현재가 = parseFloat(새현재가);
+                현재자산[자산명].수익률 = 수익률계산(parseFloat(새매입가), parseFloat(새현재가));
+                
+                // 유형별, 계좌별 합계 업데이트
+                유형별합계업데이트();
+                계좌별합계업데이트();
+                
+                // 히스토리에 기록
+                자산히스토리.push({
+                    날짜: new Date().toLocaleString(),
+                    동작: '수정',
+                    자산명: 자산명,
+                    이전매입가: 이전정보.매입가,
+                    이전현재가: 이전정보.현재가,
+                    새매입가: parseFloat(새매입가),
+                    새현재가: parseFloat(새현재가),
+                    새수익률: 현재자산[자산명].수익률.toFixed(2),
+                    총자산: 총자산계산()
+                });
+                
+                // 자동 저장
+                자동저장();
+                
+                전체업데이트();
+                alert(`${자산명}이(가) 성공적으로 수정되었습니다.\n새 수익률: ${현재자산[자산명].수익률.toFixed(2)}%`);
+            }
+        }
+        
+        // 자산 삭제
+        function 자산삭제(자산명) {
+            if (confirm(`${자산명}을(를) 정말 삭제하시겠습니까?`)) {
+                const 삭제된자산 = 현재자산[자산명];
+                delete 현재자산[자산명];
+                
+                // 유형별, 계좌별 합계 업데이트
+                유형별합계업데이트();
+                계좌별합계업데이트();
+                
+                // 히스토리에 기록
+                자산히스토리.push({
+                    날짜: new Date().toLocaleString(),
+                    동작: '삭제',
+                    자산명: 자산명,
+                    자산유형: 삭제된자산.유형,
+                    계좌: 삭제된자산.계좌,
+                    매입가: 삭제된자산.매입가,
+                    현재가: 삭제된자산.현재가,
+                    수익률: 삭제된자산.수익률,
+                    총자산: 총자산계산()
+                });
+                
+                // 자동 저장
+                자동저장();
+                
+                전체업데이트();
+                alert(`${자산명}이(가) 성공적으로 삭제되었습니다.`);
+            }
+        }
+        
+        /*
+        ===========================================
+        차트 생성 함수들
+        ===========================================
+        */
+        
+        // 부동산 vs 기타 자산 차트 생성
+        function 부동산대기타차트생성() {
+            const ctx = document.getElementById('realEstateVsOthersChart').getContext('2d');
+            
+            // 기존 차트가 있으면 제거
+            if (부동산대기타차트) {
+                부동산대기타차트.destroy();
+            }
+            
+            const 총액 = 총자산계산();
+            const 부동산금액 = 유형별합계['부동산'] || 0;
+            const 기타금액 = 총액 - 부동산금액;
+            
+            if (총액 === 0) {
+                // 자산이 없을 때 빈 차트 표시
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('자산을 추가해주세요', ctx.canvas.width/2, ctx.canvas.height/2);
+                return;
+            }
+            
+            const 데이터 = [];
+            const 라벨 = [];
+            
+            if (부동산금액 > 0) {
+                데이터.push(부동산금액);
+                라벨.push('부동산');
+            }
+            if (기타금액 > 0) {
+                데이터.push(기타금액);
+                라벨.push('기타 자산');
+            }
+            
+            부동산대기타차트 = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: 라벨,
+                    datasets: [{
+                        data: 데이터,
+                        backgroundColor: ['#FF9F40', '#36A2EB'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const 비율 = (context.parsed / 총액 * 100).toFixed(1);
+                                    return `${context.label}: ${숫자포맷(context.parsed)}만원 (${비율}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 부동산 제외 자산 배분 차트 생성
+        function 부동산제외차트생성() {
+            const ctx = document.getElementById('nonRealEstateChart').getContext('2d');
+            
+            // 기존 차트가 있으면 제거
+            if (부동산제외차트) {
+                부동산제외차트.destroy();
+            }
+            
+            // 부동산을 제외한 자산 데이터
+            const 부동산제외자산 = {};
+            for (const [유형, 금액] of Object.entries(유형별합계)) {
+                if (유형 !== '부동산' && 금액 > 0) {
+                    부동산제외자산[유형] = 금액;
+                }
+            }
+            
+            if (Object.keys(부동산제외자산).length === 0) {
+                // 자산이 없을 때 빈 차트 표시
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('부동산 외 자산을 추가해주세요', ctx.canvas.width/2, ctx.canvas.height/2);
+                return;
+            }
+            
+            부동산제외차트 = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(부동산제외자산),
+                    datasets: [{
+                        data: Object.values(부동산제외자산),
+                        backgroundColor: 차트색상,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const 부동산제외총액 = Object.values(부동산제외자산).reduce((sum, val) => sum + val, 0);
+                                    const 비율 = (context.parsed / 부동산제외총액 * 100).toFixed(1);
+                                    return `${context.label}: ${숫자포맷(context.parsed)}만원 (${비율}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 목표 대비 현황 차트 생성 (부동산 포함)
+        function 목표대비차트생성() {
+            const ctx = document.getElementById('targetComparisonChart').getContext('2d');
+            const 총액 = 총자산계산();
+            
+            // 기존 차트가 있으면 제거
+            if (목표대비차트) {
+                목표대비차트.destroy();
+            }
+            
+            if (총액 === 0) {
+                // 자산이 없을 때 빈 차트 표시
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('자산을 추가해주세요', ctx.canvas.width/2, ctx.canvas.height/2);
+                return;
+            }
+            
+            // 현재 자산을 목표 카테고리로 재분류
+            const 현재분류비율 = {
+                '국내주식': (((유형별합계['국내 개별주식'] || 0) + (유형별합계['국내 ETF'] || 0)) / 총액 * 100).toFixed(1),
+                '해외주식': (((유형별합계['해외 개별주식'] || 0) + (유형별합계['해외 ETF'] || 0)) / 총액 * 100).toFixed(1),
+                '채권': (((유형별합계['국내채권'] || 0) + (유형별합계['해외채권'] || 0)) / 총액 * 100).toFixed(1),
+                '부동산': ((유형별합계['부동산'] || 0) / 총액 * 100).toFixed(1),
+                '대안투자': ((유형별합계['기타'] || 0) / 총액 * 100).toFixed(1),
+                '현금': ((유형별합계['현금/예금'] || 0) / 총액 * 100).toFixed(1)
+            };
+            
+            목표대비차트 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(목표배분),
+                    datasets: [{
+                        label: '현재 비중',
+                        data: Object.values(현재분류비율),
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: '목표 비중',
+                        data: Object.values(목표배분),
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 50,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 전체 자산 배분 차트 생성
+        function 전체배분차트생성() {
+            const ctx = document.getElementById('totalAllocationChart').getContext('2d');
+            
+            // 기존 차트가 있으면 제거
+            if (전체배분차트) {
+                전체배분차트.destroy();
+            }
+            
+            // 0이 아닌 자산만 표시
+            const 표시할자산 = {};
+            for (const [유형, 금액] of Object.entries(유형별합계)) {
+                if (금액 > 0) {
+                    표시할자산[유형] = 금액;
+                }
+            }
+            
+            if (Object.keys(표시할자산).length === 0) {
+                // 자산이 없을 때 빈 차트 표시
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('자산을 추가해주세요', ctx.canvas.width/2, ctx.canvas.height/2);
+                return;
+            }
+            
+            전체배분차트 = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(표시할자산),
+                    datasets: [{
+                        data: Object.values(표시할자산),
+                        backgroundColor: 차트색상,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const 총액 = 총자산계산();
+                                    const 비율 = (context.parsed / 총액 * 100).toFixed(1);
+                                    return `${context.label}: ${숫자포맷(context.parsed)}만원 (${비율}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        /*
+        ===========================================
+        화면 업데이트 함수들
+        ===========================================
+        */
+        
+        // 총 자산 표시 업데이트
+        function 총자산표시업데이트() {
+            const 총액만원 = 총자산계산();
+            const 총액억원 = 만원을억원으로(총액만원);
+            document.getElementById('totalAssets').textContent = 
+                `${총액억원.toFixed(1)}억원 (${숫자포맷(총액만원)}만원)`;
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+        }
+        
+        // 위험 알림 표시
+        function 위험알림표시() {
+            const 위험목록 = 위험도분석();
+            const 컨테이너 = document.getElementById('alertsContainer');
+            컨테이너.innerHTML = '';
+            
+            if (위험목록.length === 0) {
+                컨테이너.innerHTML = '<div class="alert-item" style="background: #d4edda; color: #155724; border-left: 4px solid #28a745;"><span class="alert-icon">✅</span>현재 포트폴리오는 안전한 상태입니다.</div>';
+                return;
+            }
+            
+            위험목록.forEach(위험 => {
+                const 알림요소 = document.createElement('div');
+                알림요소.className = `alert-item alert-${위험.수준}`;
+                알림요소.innerHTML = `
+                    <span class="alert-icon">${위험.아이콘}</span>
+                    ${위험.메시지}
+                `;
+                컨테이너.appendChild(알림요소);
+            });
+        }
+        
+        // 계좌별 자산 목록 표시
+        function 계좌별자산목록표시() {
+            const 컨테이너 = document.getElementById('assetListByAccount');
+            컨테이너.innerHTML = '';
+            
+            const 총액 = 총자산계산();
+            
+            if (Object.keys(현재자산).length === 0) {
+                컨테이너.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">아직 추가된 자산이 없습니다.</div>';
+                return;
+            }
+            
+            // 계좌별로 그룹화하여 표시
+            const 계좌별자산 = {};
+            for (const [자산명, 자산정보] of Object.entries(현재자산)) {
+                const 계좌 = 자산정보.계좌;
+                if (!계좌별자산[계좌]) {
+                    계좌별자산[계좌] = [];
+                }
+                계좌별자산[계좌].push({ 자산명, ...자산정보 });
+            }
+            
+            // 각 계좌별로 표시
+            for (const [계좌, 자산목록] of Object.entries(계좌별자산)) {
+                // 계좌별 헤더 (합계 표시)
+                const 계좌합계 = 계좌별합계[계좌] || 0;
+                const 계좌비율 = 총액 > 0 ? (계좌합계 / 총액 * 100).toFixed(1) : 0;
+                
+                const 계좌헤더 = document.createElement('div');
+                계좌헤더.className = 'asset-subcategory-header';
+                계좌헤더.innerHTML = `
+                    <div class="asset-subcategory-summary">
+                        <span>💼 ${계좌} (자산 ${자산목록.length}개)</span>
+                        <span><strong>${숫자포맷(계좌합계)}만원</strong> (${계좌비율}%)</span>
+                    </div>
+                `;
+                컨테이너.appendChild(계좌헤더);
+                
+                // 개별 자산들 표시
+                자산목록.forEach(자산 => {
+                    const 자산요소 = document.createElement('div');
+                    자산요소.className = 'asset-item';
+                    자산요소.style.marginLeft = '20px';
+                    자산요소.style.borderLeft = '2px solid #dee2e6';
+                    
+                    const 수익률색상 = 자산.수익률 >= 0 ? '#28a745' : '#dc3545';
+                    const 수익률표시 = 자산.수익률 >= 0 ? `+${자산.수익률.toFixed(2)}%` : `${자산.수익률.toFixed(2)}%`;
+                    
+                    자산요소.innerHTML = `
+                        <div class="asset-info">
+                            <div class="asset-name">${자산.자산명}</div>
+                            <div class="asset-type">
+                                ${자산.유형} | 매입: ${숫자포맷(자산.매입가)}만원 → 현재: ${숫자포맷(자산.현재가)}만원
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="asset-amount">${숫자포맷(자산.현재가)}만원</div>
+                            <div class="asset-percentage" style="color: ${수익률색상}; font-weight: bold;">
+                                ${수익률표시}
+                            </div>
+                        </div>
+                        <div class="asset-actions">
+                            <button class="btn btn-primary btn-small" onclick="자산수정('${자산.자산명}')">수정</button>
+                            <button class="btn btn-danger btn-small" onclick="자산삭제('${자산.자산명}')">삭제</button>
+                        </div>
+                    `;
+                    컨테이너.appendChild(자산요소);
+                });
+            }
+        }
+        
+        // 유형별 자산 목록 표시
+        function 유형별자산목록표시() {
+            const 컨테이너 = document.getElementById('assetListByType');
+            컨테이너.innerHTML = '';
+            
+            const 총액 = 총자산계산();
+            
+            if (Object.keys(현재자산).length === 0) {
+                컨테이너.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">아직 추가된 자산이 없습니다.</div>';
+                return;
+            }
+            
+            // 유형별로 그룹화하여 표시
+            const 유형별자산 = {};
+            for (const [자산명, 자산정보] of Object.entries(현재자산)) {
+                const 유형 = 자산정보.유형;
+                if (!유형별자산[유형]) {
+                    유형별자산[유형] = [];
+                }
+                유형별자산[유형].push({ 자산명, ...자산정보 });
+            }
+            
+            // 각 유형별로 표시
+            for (const [유형, 자산목록] of Object.entries(유형별자산)) {
+                // 유형별 헤더 (합계 표시)
+                const 유형합계 = 유형별합계[유형] || 0;
+                const 유형비율 = 총액 > 0 ? (유형합계 / 총액 * 100).toFixed(1) : 0;
+                
+                const 유형헤더 = document.createElement('div');
+                유형헤더.className = 'asset-subcategory-header';
+                유형헤더.innerHTML = `
+                    <div class="asset-subcategory-summary">
+                        <span>📈 ${유형} (자산 ${자산목록.length}개)</span>
+                        <span><strong>${숫자포맷(유형합계)}만원</strong> (${유형비율}%)</span>
+                    </div>
+                `;
+                컨테이너.appendChild(유형헤더);
+                
+                // 개별 자산들 표시
+                자산목록.forEach(자산 => {
+                    const 자산요소 = document.createElement('div');
+                    자산요소.className = 'asset-item';
+                    자산요소.style.marginLeft = '20px';
+                    자산요소.style.borderLeft = '2px solid #dee2e6';
+                    
+                    const 수익률색상 = 자산.수익률 >= 0 ? '#28a745' : '#dc3545';
+                    const 수익률표시 = 자산.수익률 >= 0 ? `+${자산.수익률.toFixed(2)}%` : `${자산.수익률.toFixed(2)}%`;
+                    
+                    자산요소.innerHTML = `
+                        <div class="asset-info">
+                            <div class="asset-name">${자산.자산명}</div>
+                            <div class="asset-type">
+                                ${자산.계좌} | 매입: ${숫자포맷(자산.매입가)}만원 → 현재: ${숫자포맷(자산.현재가)}만원
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="asset-amount">${숫자포맷(자산.현재가)}만원</div>
+                            <div class="asset-percentage" style="color: ${수익률색상}; font-weight: bold;">
+                                ${수익률표시}
+                            </div>
+                        </div>
+                        <div class="asset-actions">
+                            <button class="btn btn-primary btn-small" onclick="자산수정('${자산.자산명}')">수정</button>
+                            <button class="btn btn-danger btn-small" onclick="자산삭제('${자산.자산명}')">삭제</button>
+                        </div>
+                    `;
+                    컨테이너.appendChild(자산요소);
+                });
+            }
+        }
+        
+        // 자산 목록 표시 (계좌별 + 유형별)
+        function 자산목록표시() {
+            계좌별자산목록표시();
+            유형별자산목록표시();
+        }
+        
+        // 히스토리 표시
+        function 히스토리표시() {
+            const 컨테이너 = document.getElementById('historyList');
+            컨테이너.innerHTML = '';
+            
+            if (자산히스토리.length === 0) {
+                컨테이너.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">아직 변화 기록이 없습니다.</div>';
+                return;
+            }
+            
+            // 최신 순으로 정렬
+            const 정렬된히스토리 = [...자산히스토리].reverse();
+            
+            정렬된히스토리.forEach(항목 => {
+                const 히스토리요소 = document.createElement('div');
+                히스토리요소.className = 'history-item';
+                
+                let 변화내용 = '';
+                if (항목.동작 === '추가') {
+                    변화내용 = `${항목.자산명} 추가 (${항목.계좌}): 수익률 ${항목.수익률}%`;
+                } else if (항목.동작 === '수정') {
+                    변화내용 = `${항목.자산명} 수정: 수익률 ${항목.새수익률}%`;
+                } else if (항목.동작 === '삭제') {
+                    변화내용 = `${항목.자산명} 삭제 (${항목.계좌})`;
+                } else if (항목.동작 === '초기화') {
+                    변화내용 = '전체 데이터 초기화';
+                }
+                
+                히스토리요소.innerHTML = `
+                    <div>
+                        <div class="history-date">${항목.날짜}</div>
+                        <div class="history-change">${변화내용}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div>총 자산: ${숫자포맷(항목.총자산)}만원</div>
+                        <div style="font-size: 0.9em; color: #666;">${만원을억원으로(항목.총자산).toFixed(1)}억원</div>
+                    </div>
+                `;
+                컨테이너.appendChild(히스토리요소);
+            });
+        }
+        
+        /*
+        ===========================================
+        데이터 관리 함수들 (자동저장 기능 추가)
+        ===========================================
+        */
+        
+        // 데이터 저장
+        function 데이터저장() {
+            const 데이터 = {
+                현재자산: 현재자산,
+                유형별합계: 유형별합계,
+                계좌별합계: 계좌별합계,
+                목표배분: 목표배분,
+                자산히스토리: 자산히스토리,
+                저장일시: new Date().toISOString()
+            };
+            
+            const 데이터문자열 = JSON.stringify(데이터, null, 2);
+            const 블롭 = new Blob([데이터문자열], { type: 'application/json' });
+            const url = URL.createObjectURL(블롭);
+            
+            const 링크 = document.createElement('a');
+            링크.href = url;
+            링크.download = `자산데이터_${new Date().toISOString().split('T')[0]}.json`;
+            링크.click();
+            
+            URL.revokeObjectURL(url);
+            alert('💾 자산 데이터가 성공적으로 저장되었습니다.');
+        }
+        
+        // 데이터 불러오기 트리거
+        function 데이터불러오기() {
+            document.getElementById('fileInput').click();
+        }
+        
+        // 파일에서 데이터 불러오기
+        function 파일불러오기(event) {
+            const 파일 = event.target.files[0];
+            if (!파일) return;
+            
+            const 리더 = new FileReader();
+            리더.onload = function(e) {
+                try {
+                    const 데이터 = JSON.parse(e.target.result);
+                    
+                    if (confirm('기존 데이터를 모두 덮어쓰시겠습니까?\n\n현재 데이터는 모두 삭제되고 불러온 데이터로 교체됩니다.')) {
+                        현재자산 = 데이터.현재자산 || {};
+                        유형별합계 = 데이터.유형별합계 || {
+                            '국내 개별주식': 0, '해외 개별주식': 0, '국내 ETF': 0, '해외 ETF': 0,
+                            '현금/예금': 0, '국내채권': 0, '해외채권': 0, '부동산': 0, '기타': 0
+                        };
+                        계좌별합계 = 데이터.계좌별합계 || {
+                            '삼성증권': 0, '미래에셋': 0, '하나은행': 0, '연금저축': 0,
+                            'ISA': 0, 'IRP': 0, '기타': 0
+                        };
+                        목표배분 = 데이터.목표배분 || {
+                            '국내주식': 25.0, '해외주식': 30.0, '채권': 20.0, 
+                            '부동산': 15.0, '대안투자': 5.0, '현금': 5.0
+                        };
+                        자산히스토리 = 데이터.자산히스토리 || [];
+                        
+                        // 유형별, 계좌별 합계 재계산 (데이터 무결성 확보)
+                        유형별합계업데이트();
+                        계좌별합계업데이트();
+                        
+                        // 자동 저장
+                        자동저장();
+                        
+                        전체업데이트();
+                        alert('📂 데이터가 성공적으로 불러와졌습니다.');
+                    }
+                } catch (error) {
+                    alert('❌ 파일 형식이 올바르지 않습니다.');
+                    console.error('파일 불러오기 오류:', error);
+                }
+            };
+            리더.readAsText(파일);
+            event.target.value = '';
+        }
+        
+        // 샘플 데이터 로드
+        function 샘플데이터로드() {
+            if (confirm('현재 데이터를 샘플 데이터로 교체하시겠습니까?')) {
+                현재자산 = {
+                    '삼성전자': {
+                        유형: '국내 개별주식',
+                        계좌: '삼성증권',
+                        매입가: 1000,
+                        현재가: 1100,
+                        수익률: 10.0
+                    },
+                    'KODEX 200': {
+                        유형: '국내 ETF',
+                        계좌: 'ISA',
+                        매입가: 500,
+                        현재가: 520,
+                        수익률: 4.0
+                    },
+                    'VTI': {
+                        유형: '해외 ETF',
+                        계좌: '미래에셋',
+                        매입가: 300,
+                        현재가: 330,
+                        수익률: 10.0
+                    },
+                    '국고채 10년': {
+                        유형: '국내채권',
+                        계좌: 'IRP',
+                        매입가: 200,
+                        현재가: 205,
+                        수익률: 2.5
+                    },
+                    '예금': {
+                        유형: '현금/예금',
+                        계좌: '하나은행',
+                        매입가: 500,
+                        현재가: 500,
+                        수익률: 0.0
+                    },
+                    '강남 아파트': {
+                        유형: '부동산',
+                        계좌: '기타',
+                        매입가: 5000,
+                        현재가: 5500,
+                        수익률: 10.0
+                    }
+                };
+                
+                유형별합계업데이트();
+                계좌별합계업데이트();
+                
+                자산히스토리 = [{
+                    날짜: new Date().toLocaleString(),
+                    동작: '초기화',
+                    자산명: '샘플 데이터',
+                    총자산: 총자산계산()
+                }];
+                
+                // 자동 저장
+                자동저장();
+                
+                전체업데이트();
+                alert('🔄 샘플 데이터가 로드되었습니다.');
+            }
+        }
+        
+        // 데이터 초기화
+        function 데이터초기화() {
+            if (confirm('모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                현재자산 = {};
+                유형별합계 = {
+                    '국내 개별주식': 0, '해외 개별주식': 0, '국내 ETF': 0, '해외 ETF': 0,
+                    '현금/예금': 0, '국내채권': 0, '해외채권': 0, '부동산': 0, '기타': 0
+                };
+                계좌별합계 = {
+                    '삼성증권': 0, '미래에셋': 0, '하나은행': 0, '연금저축': 0,
+                    'ISA': 0, 'IRP': 0, '기타': 0
+                };
+                자산히스토리 = [];
+                
+                // 로컬 스토리지도 초기화
+                Object.values(STORAGE_KEYS).forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                
+                전체업데이트();
+                alert('🗑️ 모든 데이터가 초기화되었습니다.');
+            }
+        }
+        
+        /*
+        ===========================================
+        전체 업데이트 함수
+        ===========================================
+        */
+        
+        function 전체업데이트() {
+            총자산표시업데이트();
+            부동산대기타차트생성();
+            부동산제외차트생성();
+            목표대비차트생성();
+            전체배분차트생성();
+            위험알림표시();
+            자산목록표시();
+        }
+        
+        /*
+        ===========================================
+        초기화 함수 (★ 핵심 개선 부분)
+        ===========================================
+        */
+        
+        // 페이지 로드 시 시스템 초기화
+        function 시스템초기화() {
+            console.log('🚀 자산 관리 시스템 초기화 시작...');
+            
+            // 1단계: 저장된 데이터 자동 불러오기
+            const 데이터로드성공 = 자동불러오기();
+            
+            // 2단계: 수익률 실시간 계산 이벤트 추가
+            document.getElementById('newAssetBuyPrice').addEventListener('input', 수익률실시간업데이트);
+            document.getElementById('newAssetCurrentPrice').addEventListener('input', 수익률실시간업데이트);
+            
+            // 3단계: 전체 UI 업데이트
+            전체업데이트();
+            
+            // 4단계: 자동 저장 시스템 활성화 (데이터 변경 감지)
+            // 주요 데이터 변경 시 자동 저장되도록 설정
+            console.log('💾 자동 저장 시스템 활성화');
+            
+            console.log('✅ 자산 관리 시스템 로드 완료');
+            console.log(`📊 현재 총 자산: ${만원을억원으로(총자산계산()).toFixed(1)}억원`);
+            console.log(`📁 등록된 자산: ${Object.keys(현재자산).length}개`);
+            
+            // 5단계: 부모 창에 로드 완료 알림
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'MODULE1_LOADED',
+                    data: {
+                        총자산: 총자산계산(),
+                        자산개수: Object.keys(현재자산).length,
+                        마지막업데이트: new Date().toLocaleString()
+                    }
+                }, '*');
+                
+                // 초기 데이터 전송
+                if (데이터로드성공) {
+                    window.parent.postMessage({
+                        type: 'MODULE1_DATA',
+                        data: {
+                            현재자산: 현재자산,
+                            유형별합계: 유형별합계,
+                            계좌별합계: 계좌별합계,
+                            총자산: 총자산계산(),
+                            자산개수: Object.keys(현재자산).length
+                        }
+                    }, '*');
+                }
+            }
+        }
+        
+        // 페이지 로드 완료 시 시스템 초기화
+        document.addEventListener('DOMContentLoaded', 시스템초기화);
+        
+        // 페이지 언로드 시 최종 자동 저장
+        window.addEventListener('beforeunload', function() {
+            자동저장();
+        });
+        
+        // PostMessage 수신 처리 (index.html과의 통신)
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'REQUEST_DATA') {
+                // 부모 창에서 데이터 요청이 오면 현재 데이터 전송
+                const 현재데이터 = {
+                    현재자산: 현재자산,
+                    유형별합계: 유형별합계,
+                    계좌별합계: 계좌별합계,
+                    목표배분: 목표배분,
+                    자산히스토리: 자산히스토리,
+                    총자산: 총자산계산(),
+                    자산개수: Object.keys(현재자산).length,
+                    마지막업데이트: new Date().toLocaleString()
+                };
+                
+                event.source.postMessage({
+                    type: 'MODULE1_DATA',
+                    data: 현재데이터
+                }, '*');
+            }
+            
+            // 대시보드에서 자동불러오기 요청
+            if (event.data && event.data.type === 'LOAD_DATA') {
+                자동불러오기();
+                전체업데이트();
+            }
+        });
+
+        function 데이터저장() {
+    const 저장데이터 = {
+        현재자산: 현재자산,
+        유형별합계: 유형별합계,
+        계좌별합계: 계좌별합계,
+        목표배분: 목표배분,
+        자산히스토리: 자산히스토리,
+        마지막업데이트: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(저장데이터, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `자산데이터_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+}
+
+function 데이터불러오기() {
+    document.getElementById('fileInput').click();
+}
+
+function 파일불러오기(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const 데이터 = JSON.parse(e.target.result);
+            현재자산 = 데이터.현재자산 || {};
+            유형별합계 = 데이터.유형별합계 || {};
+            계좌별합계 = 데이터.계좌별합계 || {};
+            목표배분 = 데이터.목표배분 || {};
+            자산히스토리 = 데이터.자산히스토리 || [];
+
+            자동저장();  // 저장 후 전체 업데이트
+            전체업데이트();
+            alert("✅ 자산 데이터를 성공적으로 불러왔습니다.");
+        } catch (error) {
+            alert("❌ JSON 파일이 손상되었거나 형식이 올바르지 않습니다.");
+        }
+    };
+    reader.readAsText(file);
+}
+
+function 데이터초기화() {
+    if (confirm("정말 모든 자산 데이터를 초기화하시겠습니까?")) {
+        현재자산 = {};
+        유형별합계 = {};
+        계좌별합계 = {};
+        자산히스토리 = [];
+        자동저장();
+        전체업데이트();
+        alert("🔄 모든 자산 데이터가 초기화되었습니다.");
+    }
+}
+
+    </script>
+</body>
+</html>
+
+

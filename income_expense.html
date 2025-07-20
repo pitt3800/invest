@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모듈 2: 수입/지출 관리 시스템</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /*
+        ===========================================
+        모듈 2: 수입/지출 관리 시스템 스타일
+        ===========================================
+        */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .monthly-summary {
+            font-size: 1.2em;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            text-align: center;
+        }
+        
+        .summary-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .summary-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .summary-amount {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            color: #28a745;
+            border-bottom: 3px solid #28a745;
+        }
+        
+        .nav-tab:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .section-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title .icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr 1fr;
+            gap: 15px;
+            align-items: end;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+        
+        .chart-canvas {
+            position: relative;
+            height: 300px;
+        }
+        
+        .item-list {
+            margin-top: 20px;
+        }
+        
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .list-item:hover {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .item-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .item-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .item-category {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .item-amount {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .income-amount {
+            color: #28a745;
+        }
+        
+        .expense-amount {
+            color: #dc3545;
+        }
+        
+        .item-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+        
+        .category-summary {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+        
+        .category-header {
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            margin: 15px 0 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .month-navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .month-nav-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+        
+        .month-nav-btn:hover {
+            background: #218838;
+        }
+        
+        .current-month {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* 자동 저장 표시 */
+        .auto-save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .auto-save-indicator.show {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .monthly-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 자동 저장 표시기 -->
+    <div class="auto-save-indicator" id="autoSaveIndicator">
+        💾 자동 저장됨
+    </div>
+
+    <div class="container">
+        <!-- 헤더 구역 -->
+        <div class="header">
+            <h1>💰 수입/지출 관리 시스템</h1>
+            <p>응급의학과 전문의를 위한 투자여력 관리</p>
+            <div class="monthly-summary">
+                <div class="summary-item">
+                    <div class="summary-label">월 총수입</div>
+                    <div class="summary-amount" id="totalIncome">0원</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">월 총지출</div>
+                    <div class="summary-amount" id="totalExpense">0원</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">투자여력</div>
+                    <div class="summary-amount" id="investmentCapacity">0원</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 월 네비게이션 -->
+        <div class="month-navigation">
+            <button class="month-nav-btn" onclick="이전월()">◀ 이전월</button>
+            <div class="current-month" id="currentMonth">2025년 6월</div>
+            <button class="month-nav-btn" onclick="다음월()">다음월 ▶</button>
+        </div>
+        
+        <!-- 탭 네비게이션 -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="탭변경('income')">💼 수입 관리</button>
+            <button class="nav-tab" onclick="탭변경('expense')">💳 지출 관리</button>
+            <button class="nav-tab" onclick="탭변경('analysis')">📊 분석</button>
+            <button class="nav-tab" onclick="탭변경('data')">💾 데이터관리</button>
+        </div>
+        
+        <!-- 수입 관리 탭 -->
+        <div id="income" class="tab-content active">
+            <!-- 수입 추가 -->
+            <div class="input-section">
+                <div class="section-title">
+                    <span class="icon">💼</span>
+                    월 수입 추가
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>수입 항목</label>
+                        <select id="incomeItem">
+                            <option value="">수입처를 선택하세요</option>
+                            <option value="병원급여">병원급여</option>
+                            <option value="보건소">보건소</option>
+                            <option value="강원상황실">강원상황실</option>
+                            <option value="평창소방서">평창소방서</option>
+                            <option value="월세">월세</option>
+                            <option value="투자수익">투자수익</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>상세 내용 (선택)</label>
+                        <input type="text" id="incomeDetail" placeholder="예: 당직비, 외래수당 등">
+                    </div>
+                    <div class="form-group">
+                        <label>금액 (만원)</label>
+                        <input type="number" id="incomeAmount" placeholder="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-success" onclick="수입추가()">추가</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 수입 목록 -->
+            <div class="category-summary">
+                <div class="section-title">
+                    <span class="icon">📋</span>
+                    현재 월 수입 내역
+                </div>
+                <div id="incomeList" class="item-list">
+                    <!-- 수입 목록이 여기에 동적으로 추가됩니다 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 지출 관리 탭 -->
+        <div id="expense" class="tab-content">
+            <!-- 지출 추가 -->
+            <div class="input-section">
+                <div class="section-title">
+                    <span class="icon">💳</span>
+                    월 지출 추가
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>지출 항목</label>
+                        <select id="expenseItem">
+                            <option value="">지출처를 선택하세요</option>
+                            <option value="삼성카드">삼성카드</option>
+                            <option value="현대카드">현대카드</option>
+                            <option value="하나카드">하나카드</option>
+                            <option value="생활비">생활비</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>상세 내용 (선택)</label>
+                        <input type="text" id="expenseDetail" placeholder="예: 병원비, 식비, 주거비 등">
+                    </div>
+                    <div class="form-group">
+                        <label>금액 (만원)</label>
+                        <input type="number" id="expenseAmount" placeholder="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-success" onclick="지출추가()">추가</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 지출 목록 -->
+            <div class="category-summary">
+                <div class="section-title">
+                    <span class="icon">📋</span>
+                    현재 월 지출 내역
+                </div>
+                <div id="expenseList" class="item-list">
+                    <!-- 지출 목록이 여기에 동적으로 추가됩니다 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 분석 탭 -->
+        <div id="analysis" class="tab-content">
+            <!-- 차트 구역 -->
+            <div class="charts-row">
+                <!-- 수입 분석 차트 -->
+                <div class="chart-container">
+                    <div class="chart-title">월 수입 구성</div>
+                    <div class="chart-canvas">
+                        <canvas id="incomeChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 지출 분석 차트 -->
+                <div class="chart-container">
+                    <div class="chart-title">월 지출 구성</div>
+                    <div class="chart-canvas">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 월별 추이 차트 -->
+            <div class="chart-container">
+                <div class="chart-title">수입/지출/투자여력 월별 추이</div>
+                <div class="chart-canvas">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 데이터 관리 탭 -->
+        <div id="data" class="tab-content">
+            <!-- 데이터 관리 섹션 -->
+            <div class="input-section">
+                <div class="section-title">
+                    <span class="icon">💾</span>
+                    데이터 저장 및 불러오기
+                </div>
+                <p style="color: #666; margin-bottom: 20px;">
+                    💡 수입/지출 데이터를 파일로 저장하거나 이전 데이터를 불러올 수 있습니다.
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <button class="btn btn-success" onclick="데이터저장()" style="padding: 15px; font-size: 1.1em;">
+                        💾 데이터 저장<br>
+                        <small style="font-size: 0.8em;">JSON 파일로 다운로드</small>
+                    </button>
+                    <button class="btn btn-primary" onclick="데이터불러오기()" style="padding: 15px; font-size: 1.1em;">
+                        📂 데이터 불러오기<br>
+                        <small style="font-size: 0.8em;">이전 저장 파일 업로드</small>
+                    </button>
+                    <button class="btn btn-secondary" onclick="샘플데이터로드()" style="padding: 15px; font-size: 1.1em;">
+                        🔄 샘플 데이터<br>
+                        <small style="font-size: 0.8em;">테스트용 데이터 로드</small>
+                    </button>
+                    <button class="btn btn-danger" onclick="데이터초기화()" style="padding: 15px; font-size: 1.1em;">
+                        🗑️ 데이터 초기화<br>
+                        <small style="font-size: 0.8em;">모든 데이터 삭제</small>
+                    </button>
+                </div>
+                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="파일불러오기(event)">
+                
+                <!-- 자동 저장 상태 표시 -->
+                <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                    <h4 style="color: #1976d2; margin-bottom: 10px;">💾 자동 저장 상태</h4>
+                    <div id="autoSaveStatus">
+                        자동 저장 활성화: 데이터 변경 시 자동으로 브라우저에 저장됩니다.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 현재 데이터 현황 -->
+            <div class="input-section">
+                <div class="section-title">
+                    <span class="icon">📊</span>
+                    현재 데이터 현황
+                </div>
+                <div id="dataStatus" style="background: white; padding: 20px; border-radius: 10px;">
+                    <!-- 데이터 현황이 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <!-- 월별 데이터 요약 -->
+            <div class="input-section">
+                <div class="section-title">
+                    <span class="icon">📅</span>
+                    월별 데이터 요약
+                </div>
+                <div id="monthlyDataSummary" style="background: white; padding: 20px; border-radius: 10px;">
+                    <!-- 월별 요약이 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+        ===========================================
+        전역 변수 및 데이터 구조
+        ===========================================
+        */
+        
+        // ⭐ 수정: localStorage 키 이름을 index.html과 정확히 일치시킴
+        const STORAGE_KEYS = {
+            월별데이터: 'module2_monthly_data',
+            시스템설정: 'module2_settings'
+        };
+        
+        // 현재 선택된 년월
+        let 현재년월 = new Date();
+        
+        // 월별 수입/지출 데이터
+        let 월별데이터 = {};
+        
+        // 차트 객체들
+        let 수입차트 = null;
+        let 지출차트 = null;
+        let 추이차트 = null;
+        
+        // 색상 설정
+        const 수입색상 = ['#28a745', '#20c997', '#17a2b8', '#6f42c1', '#e83e8c', '#fd7e14', '#ffc107', '#6c757d'];
+        const 지출색상 = ['#dc3545', '#fd7e14', '#ffc107', '#20c997', '#6f42c1', '#e83e8c', '#17a2b8', '#6c757d'];
+        
+        // ⭐ 디버깅 모드 (콘솔 로그 출력 여부)
+        let 디버그모드 = true;
+        
+        // 디버깅용 로그 함수
+        function 로그(메시지, 데이터 = null) {
+            if (디버그모드) {
+                const 시간 = new Date().toLocaleTimeString();
+                console.log(`[${시간}] 💰 모듈2: ${메시지}`);
+                if (데이터) {
+                    console.log('📊 데이터:', 데이터);
+                }
+            }
+        }
+        
+        /*
+        ===========================================
+        ⭐ 강화된 자동 저장/불러오기 함수들
+        ===========================================
+        */
+        
+        // ⭐ 개선된 자동 저장 함수
+        function 자동저장() {
+            try {
+                로그('💾 자동 저장 시작');
+                
+                // 현재 월 데이터 계산
+                const 현재월수입 = 월총수입계산();
+                const 현재월지출 = 월총지출계산();
+                const 현재월투자여력 = 투자여력계산();
+                const 현재월키값 = 현재월키();
+                
+                // ⭐ 대시보드 호환성을 위한 데이터 구조 개선
+                const 저장데이터 = {
+                    월별데이터: 월별데이터,
+                    현재년월: {
+                        year: 현재년월.getFullYear(),
+                        month: 현재년월.getMonth()
+                    },
+                    // ⭐ 대시보드에서 바로 사용할 수 있는 요약 데이터 추가
+                    월수입: 현재월수입,
+                    월지출: 현재월지출,
+                    투자여력: 현재월투자여력,
+                    수입건수: 월별데이터[현재월키값] ? 월별데이터[현재월키값].수입.length : 0,
+                    지출건수: 월별데이터[현재월키값] ? 월별데이터[현재월키값].지출.length : 0,
+                    마지막업데이트: new Date().toISOString(),
+                    버전: 'v2.0'
+                };
+                
+                로그('💾 저장할 데이터 구조', 저장데이터);
+                
+                // localStorage에 저장
+                localStorage.setItem(STORAGE_KEYS.월별데이터, JSON.stringify(저장데이터));
+                
+                // 자동 저장 표시
+                자동저장표시();
+                
+                // ⭐ 부모 창(index.html)에 강화된 데이터 전송
+                if (window.parent !== window) {
+                    로그('📡 부모 창으로 데이터 전송 시작');
+                    
+                    // 여러 가지 메시지 타입으로 전송하여 확실히 수신되도록 함
+                    
+                    // 1. 기본 데이터 업데이트 메시지
+                    window.parent.postMessage({
+                        type: 'MODULE2_DATA_UPDATE',
+                        data: 저장데이터
+                    }, '*');
+                    
+                    // 2. 즉시 저장 완료 메시지
+                    window.parent.postMessage({
+                        type: 'DATA_SAVED_IMMEDIATE',
+                        module: 'module2',
+                        data: 저장데이터
+                    }, '*');
+                    
+                    // 3. 저장 완료 알림
+                    window.parent.postMessage({
+                        type: 'DATA_SAVED',
+                        module: 'module2'
+                    }, '*');
+                    
+                    로그('📡 부모 창으로 3가지 메시지 전송 완료');
+                }
+                
+                로그('✅ 자동 저장 완료');
+                return true;
+                
+            } catch (error) {
+                로그('❌ 자동 저장 실패', error);
+                console.error('자동 저장 실패:', error);
+                return false;
+            }
+        }
+        
+        // 자동 저장 표시
+        function 자동저장표시() {
+            const 표시기 = document.getElementById('autoSaveIndicator');
+            표시기.classList.add('show');
+            setTimeout(() => {
+                표시기.classList.remove('show');
+            }, 2000);
+        }
+        
+        // ⭐ 개선된 자동 불러오기 함수
+        function 자동불러오기() {
+            try {
+                로그('📂 자동 불러오기 시작');
+                
+                const 저장된데이터 = localStorage.getItem(STORAGE_KEYS.월별데이터);
+                if (저장된데이터) {
+                    const 데이터 = JSON.parse(저장된데이터);
+                    로그('📂 저장된 데이터 발견', 데이터);
+                    
+                    월별데이터 = 데이터.월별데이터 || {};
+                    
+                    // 현재년월 복원
+                    if (데이터.현재년월) {
+                        현재년월 = new Date(데이터.현재년월.year, 데이터.현재년월.month);
+                    }
+                    
+                    로그('✅ 저장된 수입/지출 데이터 자동 불러오기 완료');
+                    
+                    // 상태 표시 업데이트
+                    const 총월수 = Object.keys(월별데이터).length;
+                    const 현재월투자여력 = 투자여력계산();
+                    
+                    document.getElementById('autoSaveStatus').innerHTML = 
+                        `마지막 저장: ${new Date().toLocaleString()}<br>등록된 월수: ${총월수}개월<br>현재 월 투자여력: ${숫자포맷(현재월투자여력)}만원`;
+                    
+                    return true;  // 성공 시 true 반환
+                } else {
+                    로그('⚠️ 저장된 데이터 없음');
+                    return false;  // 데이터가 없으면 false 반환
+                }
+                
+            } catch (error) {
+                로그('❌ 자동 불러오기 실패', error);
+                console.error('자동 불러오기 실패:', error);
+                return false;  // 실패 시 false 반환
+            }
+        }
+        
+        // window 객체에 함수들 노출 (부모 창에서 접근 가능하도록)
+        window.자동불러오기 = 자동불러오기;
+        window.전체업데이트 = 전체업데이트;
+        
+        /*
+        ===========================================
+        기본 함수들
+        ===========================================
+        */
+        
+        // 숫자를 천단위 콤마로 포맷
+        function 숫자포맷(숫자) {
+            return 숫자.toLocaleString();
+        }
+        
+        // 현재 월의 키 생성
+        function 현재월키() {
+            return `${현재년월.getFullYear()}-${String(현재년월.getMonth() + 1).padStart(2, '0')}`;
+        }
+        
+        // 월별 데이터 초기화
+        function 월별데이터초기화(월키) {
+            if (!월별데이터[월키]) {
+                월별데이터[월키] = {
+                    수입: [],
+                    지출: []
+                };
+            }
+        }
+        
+        /*
+        ===========================================
+        수입/지출 관리 함수들 (자동저장 기능 강화)
+        ===========================================
+        */
+        
+        // 수입 추가
+        function 수입추가() {
+            const 항목 = document.getElementById('incomeItem').value;
+            const 상세내용 = document.getElementById('incomeDetail').value.trim();
+            const 금액 = parseFloat(document.getElementById('incomeAmount').value) || 0;
+            
+            if (!항목) {
+                alert('수입 항목을 선택해주세요.');
+                return;
+            }
+            
+            if (금액 <= 0) {
+                alert('유효한 금액을 입력해주세요.');
+                return;
+            }
+            
+            const 월키 = 현재월키();
+            월별데이터초기화(월키);
+            
+            const 표시명 = 상세내용 ? `${항목} (${상세내용})` : 항목;
+            
+            const 수입데이터 = {
+                id: Date.now(),
+                항목: 항목,
+                상세내용: 상세내용,
+                표시명: 표시명,
+                금액: 금액,
+                날짜: new Date().toISOString()
+            };
+            
+            월별데이터[월키].수입.push(수입데이터);
+            
+            로그(`💼 수입 추가: ${표시명} - ${금액}만원`);
+            
+            // 폼 초기화
+            document.getElementById('incomeItem').value = '';
+            document.getElementById('incomeDetail').value = '';
+            document.getElementById('incomeAmount').value = '';
+            
+            // ⭐ 자동 저장 및 즉시 동기화
+            자동저장();
+            
+            전체업데이트();
+            alert(`${표시명}: ${숫자포맷(금액)}만원이 추가되었습니다.`);
+        }
+        
+        // 지출 추가
+        function 지출추가() {
+            const 항목 = document.getElementById('expenseItem').value;
+            const 상세내용 = document.getElementById('expenseDetail').value.trim();
+            const 금액 = parseFloat(document.getElementById('expenseAmount').value) || 0;
+            
+            if (!항목) {
+                alert('지출 항목을 선택해주세요.');
+                return;
+            }
+            
+            if (금액 <= 0) {
+                alert('유효한 금액을 입력해주세요.');
+                return;
+            }
+            
+            const 월키 = 현재월키();
+            월별데이터초기화(월키);
+            
+            const 표시명 = 상세내용 ? `${항목} (${상세내용})` : 항목;
+            
+            const 지출데이터 = {
+                id: Date.now(),
+                항목: 항목,
+                상세내용: 상세내용,
+                표시명: 표시명,
+                금액: 금액,
+                날짜: new Date().toISOString()
+            };
+            
+            월별데이터[월키].지출.push(지출데이터);
+            
+            로그(`💳 지출 추가: ${표시명} - ${금액}만원`);
+            
+            // 폼 초기화
+            document.getElementById('expenseItem').value = '';
+            document.getElementById('expenseDetail').value = '';
+            document.getElementById('expenseAmount').value = '';
+            
+            // ⭐ 자동 저장 및 즉시 동기화
+            자동저장();
+            
+            전체업데이트();
+            alert(`${표시명}: ${숫자포맷(금액)}만원이 추가되었습니다.`);
+        }
+        
+        // 수입 삭제
+        function 수입삭제(id) {
+            if (confirm('이 수입 항목을 삭제하시겠습니까?')) {
+                const 월키 = 현재월키();
+                if (월별데이터[월키]) {
+                    월별데이터[월키].수입 = 월별데이터[월키].수입.filter(item => item.id !== id);
+                    
+                    로그(`🗑️ 수입 삭제: ID ${id}`);
+                    
+                    // ⭐ 자동 저장 및 즉시 동기화
+                    자동저장();
+                    
+                    전체업데이트();
+                }
+            }
+        }
+        
+        // 지출 삭제
+        function 지출삭제(id) {
+            if (confirm('이 지출 항목을 삭제하시겠습니까?')) {
+                const 월키 = 현재월키();
+                if (월별데이터[월키]) {
+                    월별데이터[월키].지출 = 월별데이터[월키].지출.filter(item => item.id !== id);
+                    
+                    로그(`🗑️ 지출 삭제: ID ${id}`);
+                    
+                    // ⭐ 자동 저장 및 즉시 동기화
+                    자동저장();
+                    
+                    전체업데이트();
+                }
+            }
+        }
+        
+        /*
+        ===========================================
+        계산 함수들
+        ===========================================
+        */
+        
+        // 월 총 수입 계산
+        function 월총수입계산() {
+            const 월키 = 현재월키();
+            if (!월별데이터[월키]) return 0;
+            return 월별데이터[월키].수입.reduce((sum, item) => sum + item.금액, 0);
+        }
+        
+        // 월 총 지출 계산
+        function 월총지출계산() {
+            const 월키 = 현재월키();
+            if (!월별데이터[월키]) return 0;
+            return 월별데이터[월키].지출.reduce((sum, item) => sum + item.금액, 0);
+        }
+        
+        // 투자여력 계산
+        function 투자여력계산() {
+            return 월총수입계산() - 월총지출계산();
+        }
+        
+        // 항목별 수입 합계
+        function 항목별수입() {
+            const 월키 = 현재월키();
+            if (!월별데이터[월키]) return {};
+            
+            const 항목합계 = {};
+            월별데이터[월키].수입.forEach(item => {
+                항목합계[item.항목] = (항목합계[item.항목] || 0) + item.금액;
+            });
+            return 항목합계;
+        }
+        
+        // 항목별 지출 합계
+        function 항목별지출() {
+            const 월키 = 현재월키();
+            if (!월별데이터[월키]) return {};
+            
+            const 항목합계 = {};
+            월별데이터[월키].지출.forEach(item => {
+                항목합계[item.항목] = (항목합계[item.항목] || 0) + item.금액;
+            });
+            return 항목합계;
+        }
+        
+        /*
+        ===========================================
+        네비게이션 함수들
+        ===========================================
+        */
+        
+        // 탭 변경
+        function 탭변경(탭이름) {
+            // 모든 탭 비활성화
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 선택된 탭 활성화
+            event.target.classList.add('active');
+            document.getElementById(탭이름).classList.add('active');
+            
+            // 분석 탭 선택 시 차트 업데이트
+            if (탭이름 === 'analysis') {
+                setTimeout(() => {
+                    수입차트생성();
+                    지출차트생성();
+                    추이차트생성();
+                }, 100);
+            }
+            
+            // 데이터 관리 탭 선택 시 데이터 현황 업데이트
+            if (탭이름 === 'data') {
+                setTimeout(() => {
+                    데이터현황업데이트();
+                    월별데이터요약업데이트();
+                }, 100);
+            }
+        }
+        
+        // 이전월로 이동
+        function 이전월() {
+            현재년월.setMonth(현재년월.getMonth() - 1);
+            
+            로그(`📅 이전월 이동: ${현재월키()}`);
+            
+            // ⭐ 자동 저장 및 즉시 동기화
+            자동저장();
+            
+            전체업데이트();
+        }
+        
+        // 다음월로 이동
+        function 다음월() {
+            현재년월.setMonth(현재년월.getMonth() + 1);
+            
+            로그(`📅 다음월 이동: ${현재월키()}`);
+            
+            // ⭐ 자동 저장 및 즉시 동기화
+            자동저장();
+            
+            전체업데이트();
+        }
+        
+        /*
+        ===========================================
+        차트 생성 함수들
+        ===========================================
+        */
+        
+        // 수입 차트 생성
+        function 수입차트생성() {
+            const ctx = document.getElementById('incomeChart').getContext('2d');
+            
+            if (수입차트) {
+                수입차트.destroy();
+            }
+            
+            const 항목데이터 = 항목별수입();
+            const 라벨 = Object.keys(항목데이터);
+            const 데이터 = Object.values(항목데이터);
+            
+            if (라벨.length === 0) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('수입 데이터를 추가해주세요', ctx.canvas.width/2, ctx.canvas.height/2);
+                return;
+            }
+            
+            수입차트 = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: 라벨,
+                    datasets: [{
+                        data: 데이터,
+                        backgroundColor: 수입색상,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const 총액 = 데이터.reduce((sum, val) => sum + val, 0);
+                                    const 비율 = (context.parsed / 총액 * 100).toFixed(1);
+                                    return `${context.label}: ${숫자포맷(context.parsed)}만원 (${비율}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 지출 차트 생성
+        function 지출차트생성() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            
+            if (지출차트) {
+                지출차트.destroy();
+            }
+            
+            const 항목데이터 = 항목별지출();
+            const 라벨 = Object.keys(항목데이터);
+            const 데이터 = Object.values(항목데이터);
+            
+            if (라벨.length === 0) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('지출 데이터를 추가해주세요', ctx.canvas.width/2, ctx.canvas.height/2);
+                return;
+            }
+            
+            지출차트 = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: 라벨,
+                    datasets: [{
+                        data: 데이터,
+                        backgroundColor: 지출색상,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const 총액 = 데이터.reduce((sum, val) => sum + val, 0);
+                                    const 비율 = (context.parsed / 총액 * 100).toFixed(1);
+                                    return `${context.label}: ${숫자포맷(context.parsed)}만원 (${비율}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 월별 추이 차트 생성
+        function 추이차트생성() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            
+            if (추이차트) {
+                추이차트.destroy();
+            }
+            
+            // 최근 12개월 데이터 준비
+            const 월데이터 = [];
+            const 수입데이터 = [];
+            const 지출데이터 = [];
+            const 투자여력데이터 = [];
+            
+            for (let i = 11; i >= 0; i--) {
+                const 날짜 = new Date();
+                날짜.setMonth(날짜.getMonth() - i);
+                const 월키 = `${날짜.getFullYear()}-${String(날짜.getMonth() + 1).padStart(2, '0')}`;
+                
+                월데이터.push(`${날짜.getFullYear()}년 ${날짜.getMonth() + 1}월`);
+                
+                if (월별데이터[월키]) {
+                    const 수입 = 월별데이터[월키].수입.reduce((sum, item) => sum + item.금액, 0);
+                    const 지출 = 월별데이터[월키].지출.reduce((sum, item) => sum + item.금액, 0);
+                    수입데이터.push(수입);
+                    지출데이터.push(지출);
+                    투자여력데이터.push(수입 - 지출);
+                } else {
+                    수입데이터.push(0);
+                    지출데이터.push(0);
+                    투자여력데이터.push(0);
+                }
+            }
+            
+            추이차트 = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: 월데이터,
+                    datasets: [{
+                        label: '월 수입',
+                        data: 수입데이터,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.1
+                    }, {
+                        label: '월 지출',
+                        data: 지출데이터,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.1
+                    }, {
+                        label: '투자여력',
+                        data: 투자여력데이터,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${숫자포맷(context.parsed.y)}만원`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 숫자포맷(value) + '만원';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        /*
+        ===========================================
+        화면 업데이트 함수들
+        ===========================================
+        */
+        
+        // 헤더 요약 정보 업데이트
+        function 헤더요약업데이트() {
+            const 총수입 = 월총수입계산();
+            const 총지출 = 월총지출계산();
+            const 투자여력 = 투자여력계산();
+            
+            document.getElementById('totalIncome').textContent = `${숫자포맷(총수입)}만원`;
+            document.getElementById('totalExpense').textContent = `${숫자포맷(총지출)}만원`;
+            document.getElementById('investmentCapacity').textContent = `${숫자포맷(투자여력)}만원`;
+            
+            로그('📊 헤더 요약 업데이트', { 총수입, 총지출, 투자여력 });
+        }
+        
+        // 현재 월 표시 업데이트
+        function 현재월표시업데이트() {
+            const 년 = 현재년월.getFullYear();
+            const 월 = 현재년월.getMonth() + 1;
+            document.getElementById('currentMonth').textContent = `${년}년 ${월}월`;
+        }
+        
+        // 수입 목록 표시
+        function 수입목록표시() {
+            const 컨테이너 = document.getElementById('incomeList');
+            컨테이너.innerHTML = '';
+            
+            const 월키 = 현재월키();
+            if (!월별데이터[월키] || 월별데이터[월키].수입.length === 0) {
+                컨테이너.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">아직 수입 데이터가 없습니다.</div>';
+                return;
+            }
+            
+            월별데이터[월키].수입.forEach(item => {
+                const 항목요소 = document.createElement('div');
+                항목요소.className = 'list-item';
+                항목요소.innerHTML = `
+                    <div class="item-info">
+                        <div class="item-name">${item.표시명}</div>
+                        ${item.상세내용 ? `<div class="item-category">${item.상세내용}</div>` : ''}
+                    </div>
+                    <div class="item-amount income-amount">+${숫자포맷(item.금액)}만원</div>
+                    <div class="item-actions">
+                        <button class="btn btn-danger btn-small" onclick="수입삭제(${item.id})">삭제</button>
+                    </div>
+                `;
+                컨테이너.appendChild(항목요소);
+            });
+        }
+        
+        // 지출 목록 표시
+        function 지출목록표시() {
+            const 컨테이너 = document.getElementById('expenseList');
+            컨테이너.innerHTML = '';
+            
+            const 월키 = 현재월키();
+            if (!월별데이터[월키] || 월별데이터[월키].지출.length === 0) {
+                컨테이너.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">아직 지출 데이터가 없습니다.</div>';
+                return;
+            }
+            
+            월별데이터[월키].지출.forEach(item => {
+                const 항목요소 = document.createElement('div');
+                항목요소.className = 'list-item';
+                항목요소.innerHTML = `
+                    <div class="item-info">
+                        <div class="item-name">${item.표시명}</div>
+                        ${item.상세내용 ? `<div class="item-category">${item.상세내용}</div>` : ''}
+                    </div>
+                    <div class="item-amount expense-amount">-${숫자포맷(item.금액)}만원</div>
+                    <div class="item-actions">
+                        <button class="btn btn-danger btn-small" onclick="지출삭제(${item.id})">삭제</button>
+                    </div>
+                `;
+                컨테이너.appendChild(항목요소);
+            });
+        }
+        
+        /*
+        ===========================================
+        데이터 관리 함수들 (자동저장 기능 강화)
+        ===========================================
+        */
+        
+        // 데이터 저장
+        function 데이터저장() {
+            const 저장데이터 = {
+                월별데이터: 월별데이터,
+                저장일시: new Date().toISOString(),
+                시스템버전: "모듈2_수입지출관리_v2.0"
+            };
+            
+            const 데이터문자열 = JSON.stringify(저장데이터, null, 2);
+            const 블롭 = new Blob([데이터문자열], { type: 'application/json' });
+            const url = URL.createObjectURL(블롭);
+            
+            const 링크 = document.createElement('a');
+            링크.href = url;
+            const 오늘 = new Date().toISOString().split('T')[0];
+            링크.download = `수입지출데이터_${오늘}.json`;
+            링크.click();
+            
+            URL.revokeObjectURL(url);
+            alert('💾 수입/지출 데이터가 성공적으로 저장되었습니다.');
+        }
+        
+        // 데이터 불러오기 트리거
+        function 데이터불러오기() {
+            document.getElementById('fileInput').click();
+        }
+        
+        // 파일에서 데이터 불러오기
+        function 파일불러오기(event) {
+            const 파일 = event.target.files[0];
+            if (!파일) return;
+            
+            const 리더 = new FileReader();
+            리더.onload = function(e) {
+                try {
+                    const 불러온데이터 = JSON.parse(e.target.result);
+                    
+                    if (!불러온데이터.월별데이터) {
+                        alert('❌ 올바른 수입/지출 데이터 파일이 아닙니다.');
+                        return;
+                    }
+                    
+                    if (confirm('기존 데이터를 모두 덮어쓰시겠습니까?\n\n현재 데이터는 모두 삭제되고 불러온 데이터로 교체됩니다.')) {
+                        월별데이터 = 불러온데이터.월별데이터 || {};
+                        
+                        로그('📂 파일에서 데이터 불러오기 완료', 월별데이터);
+                        
+                        // ⭐ 자동 저장 및 즉시 동기화
+                        자동저장();
+                        
+                        전체업데이트();
+                        데이터현황업데이트();
+                        alert('📂 데이터가 성공적으로 불러와졌습니다.');
+                    }
+                } catch (error) {
+                    alert('❌ 파일을 읽을 수 없습니다. 올바른 JSON 파일인지 확인해주세요.');
+                    로그('❌ 파일 불러오기 오류', error);
+                }
+            };
+            리더.readAsText(파일);
+            
+            // 파일 입력 초기화
+            event.target.value = '';
+        }
+        
+        // 데이터 초기화
+        function 데이터초기화() {
+            if (confirm('⚠️ 모든 수입/지출 데이터를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) {
+                if (confirm('정말 확실하시나요? 모든 월별 데이터가 영구적으로 삭제됩니다.')) {
+                    월별데이터 = {};
+                    
+                    // 로컬 스토리지도 초기화
+                    Object.values(STORAGE_KEYS).forEach(key => {
+                        localStorage.removeItem(key);
+                    });
+                    
+                    로그('🗑️ 모든 데이터 초기화 완료');
+                    
+                    // ⭐ 빈 데이터로 자동 저장 및 동기화
+                    자동저장();
+                    
+                    전체업데이트();
+                    데이터현황업데이트();
+                    alert('🗑️ 모든 데이터가 초기화되었습니다.');
+                }
+            }
+        }
+        
+        // 데이터 현황 업데이트
+        function 데이터현황업데이트() {
+            const 컨테이너 = document.getElementById('dataStatus');
+            const 총월수 = Object.keys(월별데이터).length;
+            
+            let 총수입항목 = 0;
+            let 총지출항목 = 0;
+            let 총수입금액 = 0;
+            let 총지출금액 = 0;
+            
+            for (const [월키, 데이터] of Object.entries(월별데이터)) {
+                총수입항목 += 데이터.수입.length;
+                총지출항목 += 데이터.지출.length;
+                총수입금액 += 데이터.수입.reduce((sum, item) => sum + item.금액, 0);
+                총지출금액 += 데이터.지출.reduce((sum, item) => sum + item.금액, 0);
+            }
+            
+            컨테이너.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; text-align: center;">
+                    <div>
+                        <div style="font-size: 2em; color: #28a745; font-weight: bold;">${총월수}</div>
+                        <div style="color: #666;">등록된 월수</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2em; color: #007bff; font-weight: bold;">${총수입항목}</div>
+                        <div style="color: #666;">총 수입 항목</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 2em; color: #dc3545; font-weight: bold;">${총지출항목}</div>
+                        <div style="color: #666;">총 지출 항목</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5em; color: #28a745; font-weight: bold;">+${숫자포맷(총수입금액)}만원</div>
+                        <div style="color: #666;">누적 총수입</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5em; color: #dc3545; font-weight: bold;">-${숫자포맷(총지출금액)}만원</div>
+                        <div style="color: #666;">누적 총지출</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5em; color: #007bff; font-weight: bold;">${숫자포맷(총수입금액 - 총지출금액)}만원</div>
+                        <div style="color: #666;">누적 순수익</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 월별 데이터 요약 업데이트
+        function 월별데이터요약업데이트() {
+            const 컨테이너 = document.getElementById('monthlyDataSummary');
+            
+            if (Object.keys(월별데이터).length === 0) {
+                컨테이너.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">아직 등록된 월별 데이터가 없습니다.</div>';
+                return;
+            }
+            
+            // 월별 데이터를 최신순으로 정렬
+            const 정렬된월키 = Object.keys(월별데이터).sort().reverse();
+            
+            let 요약HTML = '<div style="display: grid; gap: 15px;">';
+            
+            정렬된월키.forEach(월키 => {
+                const 데이터 = 월별데이터[월키];
+                const 월수입 = 데이터.수입.reduce((sum, item) => sum + item.금액, 0);
+                const 월지출 = 데이터.지출.reduce((sum, item) => sum + item.금액, 0);
+                const 월투자여력 = 월수입 - 월지출;
+                
+                const [년, 월] = 월키.split('-');
+                const 월표시 = `${년}년 ${parseInt(월)}월`;
+                
+                요약HTML += `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: bold; font-size: 1.1em; color: #333;">${월표시}</div>
+                                <div style="font-size: 0.9em; color: #666;">수입 ${데이터.수입.length}건 · 지출 ${데이터.지출.length}건</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: #28a745;">수입: +${숫자포맷(월수입)}만원</div>
+                                <div style="color: #dc3545;">지출: -${숫자포맷(월지출)}만원</div>
+                                <div style="color: #007bff; font-weight: bold;">투자여력: ${숫자포맷(월투자여력)}만원</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            요약HTML += '</div>';
+            컨테이너.innerHTML = 요약HTML;
+        }
+        
+        /*
+        ===========================================
+        전체 업데이트 함수
+        ===========================================
+        */
+        
+        function 전체업데이트() {
+            현재월표시업데이트();
+            헤더요약업데이트();
+            수입목록표시();
+            지출목록표시();
+        }
+        
+        /*
+        ===========================================
+        ⭐ 강화된 초기화 함수
+        ===========================================
+        */
+        
+        // 샘플 데이터 로드 (테스트용)
+        function 샘플데이터로드() {
+            const 월키 = 현재월키();
+            월별데이터[월키] = {
+                수입: [
+                    { id: 1751198811355, 항목: '병원급여', 상세내용: '', 표시명: '병원급여', 금액: 3100, 날짜: new Date().toISOString() },
+                    { id: 1751198816838, 항목: '보건소', 상세내용: '', 표시명: '보건소', 금액: 33, 날짜: new Date().toISOString() },
+                    { id: 1751198838159, 항목: '평창소방서', 상세내용: '', 표시명: '평창소방서', 금액: 43, 날짜: new Date().toISOString() },
+                    { id: 1751198844720, 항목: '강원상황실', 상세내용: '', 표시명: '강원상황실', 금액: 82, 날짜: new Date().toISOString() },
+                    { id: 1751198857007, 항목: '기타', 상세내용: '원주세브란스', 표시명: '기타 (원주세브란스)', 금액: 10, 날짜: new Date().toISOString() }
+                ],
+                지출: [
+                    { id: 1751198879690, 항목: '삼성카드', 상세내용: '', 표시명: '삼성카드', 금액: 566, 날짜: new Date().toISOString() },
+                    { id: 1751198886157, 항목: '현대카드', 상세내용: '', 표시명: '현대카드', 금액: 135, 날짜: new Date().toISOString() },
+                    { id: 1751198893185, 항목: '하나카드', 상세내용: '', 표시명: '하나카드', 금액: 31, 날짜: new Date().toISOString() },
+                    { id: 1751198900468, 항목: '생활비', 상세내용: '', 표시명: '생활비', 금액: 300, 날짜: new Date().toISOString() },
+                    { id: 1751198909810, 항목: '기타', 상세내용: '주희 ISA', 표시명: '기타 (주희 ISA)', 금액: 1000, 날짜: new Date().toISOString() }
+                ]
+            };
+            
+            로그('🔄 샘플 데이터 로드 완료', 월별데이터[월키]);
+            
+            // ⭐ 자동 저장 및 즉시 동기화
+            자동저장();
+            
+            전체업데이트();
+            alert('🔄 샘플 데이터가 로드되었습니다.');
+        }
+        
+        // ⭐ 강화된 시스템 초기화 함수
+        function 시스템초기화() {
+            로그('🚀 수입/지출 관리 시스템 초기화 시작...');
+            
+            // 1단계: 저장된 데이터 자동 불러오기
+            const 데이터로드성공 = 자동불러오기();
+            
+            // 2단계: 전체 UI 업데이트
+            전체업데이트();
+            
+            로그('✅ 수입/지출 관리 시스템이 성공적으로 로드되었습니다.');
+            로그('💡 "데이터 관리" 탭에서 샘플 데이터를 로드하거나 이전 데이터를 불러올 수 있습니다.');
+            로그(`💰 현재 월 투자여력: ${숫자포맷(투자여력계산())}만원`);
+            로그(`📅 등록된 월수: ${Object.keys(월별데이터).length}개월`);
+            
+            // 3단계: 부모 창에 로드 완료 알림 (여러 방식으로 전송)
+            if (window.parent !== window) {
+                로그('📡 부모 창에 로드 완료 알림 전송 시작');
+                
+                // 기본 로드 완료 메시지
+                window.parent.postMessage({
+                    type: 'MODULE2_LOADED',
+                    data: {
+                        투자여력: 투자여력계산(),
+                        등록월수: Object.keys(월별데이터).length,
+                        마지막업데이트: new Date().toLocaleString()
+                    }
+                }, '*');
+                
+                // ⭐ 데이터가 있으면 즉시 전송
+                if (데이터로드성공) {
+                    const 현재월키값 = 현재월키();
+                    const 완전한데이터 = {
+                        월별데이터: 월별데이터,
+                        월수입: 월총수입계산(),
+                        월지출: 월총지출계산(),
+                        투자여력: 투자여력계산(),
+                        수입건수: 월별데이터[현재월키값] ? 월별데이터[현재월키값].수입.length : 0,
+                        지출건수: 월별데이터[현재월키값] ? 월별데이터[현재월키값].지출.length : 0,
+                        현재년월: { year: 현재년월.getFullYear(), month: 현재년월.getMonth() },
+                        마지막업데이트: new Date().toISOString()
+                    };
+                    
+                    // 여러 타입의 메시지로 전송
+                    window.parent.postMessage({
+                        type: 'MODULE2_DATA',
+                        data: 완전한데이터
+                    }, '*');
+                    
+                    window.parent.postMessage({
+                        type: 'MODULE2_DATA_UPDATE',
+                        data: 완전한데이터
+                    }, '*');
+                    
+                    로그('📡 초기 데이터 전송 완료', 완전한데이터);
+                }
+                
+                로그('📡 부모 창에 로드 완료 알림 전송 완료');
+            }
+            
+            // ⭐ 4단계: 추가 확인을 위한 지연된 데이터 전송
+            setTimeout(() => {
+                if (window.parent !== window && 데이터로드성공) {
+                    로그('📡 지연된 데이터 재전송 실행');
+                    자동저장(); // 다시 한번 데이터 전송
+                }
+            }, 2000);
+        }
+        
+        // 페이지 로드 완료 시 시스템 초기화
+        document.addEventListener('DOMContentLoaded', 시스템초기화);
+        
+        // 페이지 언로드 시 최종 자동 저장
+        window.addEventListener('beforeunload', function() {
+            자동저장();
+        });
+        
+        // ⭐ 강화된 PostMessage 수신 처리 (index.html과의 통신)
+        window.addEventListener('message', function(event) {
+            로그('📬 PostMessage 수신', event.data);
+            
+            if (event.data && event.data.type === 'REQUEST_DATA') {
+                로그('📊 부모 창에서 데이터 요청 수신');
+                
+                // 부모 창에서 데이터 요청이 오면 현재 데이터 전송
+                const 현재월키값 = 현재월키();
+                const 현재데이터 = {
+                    월별데이터: 월별데이터,
+                    투자여력: 투자여력계산(),
+                    월수입: 월총수입계산(),
+                    월지출: 월총지출계산(),
+                    수입건수: 월별데이터[현재월키값] ? 월별데이터[현재월키값].수입.length : 0,
+                    지출건수: 월별데이터[현재월키값] ? 월별데이터[현재월키값].지출.length : 0,
+                    등록월수: Object.keys(월별데이터).length,
+                    현재년월: { year: 현재년월.getFullYear(), month: 현재년월.getMonth() },
+                    마지막업데이트: new Date().toISOString()
+                };
+                
+                event.source.postMessage({
+                    type: 'MODULE2_DATA',
+                    data: 현재데이터
+                }, '*');
+                
+                로그('📡 데이터 요청에 대한 응답 전송 완료', 현재데이터);
+            }
+            
+            // 대시보드에서 자동불러오기 요청
+            if (event.data && event.data.type === 'LOAD_DATA') {
+                로그('📂 대시보드에서 자동불러오기 요청');
+                자동불러오기();
+                전체업데이트();
+                // 불러오기 후 즉시 데이터 전송
+                setTimeout(() => 자동저장(), 100);
+            }
+            
+            // 새로고침 요청 처리
+            if (event.data && event.data.type === 'REFRESH_REQUEST') {
+                로그('🔄 대시보드에서 새로고침 요청');
+                자동불러오기();
+                전체업데이트();
+                // 새로고침 완료 알림
+                window.parent.postMessage({
+                    type: 'REFRESH_COMPLETED',
+                    module: 'module2'
+                }, '*');
+            }
+        });
+        
+        // ⭐ 추가: 페이지 가시성 변경 시 데이터 전송
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && window.parent !== window) {
+                로그('👁️ 페이지 다시 보임 - 데이터 재전송');
+                window.parent.postMessage({
+                    type: 'MODULE_VISIBLE',
+                    module: 'module2'
+                }, '*');
+                setTimeout(() => 자동저장(), 300);
+            }
+        });
+        
+        // ⭐ 추가: 정기적 하트비트 (연결 상태 확인)
+        setInterval(() => {
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'HEARTBEAT',
+                    module: 'module2',
+                    timestamp: new Date().getTime()
+                }, '*');
+            }
+        }, 10000); // 10초마다
+    </script>
+</body>
+</html>
